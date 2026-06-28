@@ -1,53 +1,88 @@
 "use client";
 
 import { useState } from "react";
-import QrScanner from "@/components/QrScanner";
-import { parseQrPayload, type HairShade } from "@/lib/products";
+import { computeCost, formatCost } from "@/lib/pricing";
 
-type Step = "scan" | "photo" | "result";
+type Step = "box-photo" | "shade-review" | "hair-photo" | "result";
+
+type ShadeInfo = {
+  shadeCode: string;
+  shadeName: string;
+  hexColor: string;
+  confidence: "high" | "medium" | "low";
+};
+
+type CostEntry = { label: string; cents: number };
 
 export default function Home() {
-  const [step, setStep] = useState<Step>("scan");
-  const [shade, setShade] = useState<HairShade | null>(null);
-  const [photoFile, setPhotoFile] = useState<File | null>(null);
-  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  const [step, setStep] = useState<Step>("box-photo");
+  const [shade, setShade] = useState<ShadeInfo | null>(null);
+  const [boxPreview, setBoxPreview] = useState<string | null>(null);
+  const [hairFile, setHairFile] = useState<File | null>(null);
+  const [hairPreview, setHairPreview] = useState<string | null>(null);
   const [result, setResult] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [costs, setCosts] = useState<CostEntry[]>([]);
 
-  function handleScan(text: string) {
-    const parsed = parseQrPayload(text);
-    if (!parsed) {
-      setError("That code didn't contain a recognizable color.");
-      return;
-    }
+  function addCost(label: string, inputTokens: number, outputTokens: number) {
+    const cents = computeCost("gemini-2.5-flash", inputTokens, outputTokens) * 100;
+    setCosts((prev) => [...prev, { label, cents }]);
+  }
+
+  async function readBox(file: File) {
     setError(null);
-    setShade(parsed);
-    setStep("photo");
+    setLoading(true);
+    try {
+      const form = new FormData();
+      form.append("image", file);
+      const res = await fetch("/api/read-box", { method: "POST", body: form });
+      const data = await res.json();
+
+      if (!res.ok) throw new Error(data.error ?? "Failed to read box.");
+
+      setShade({
+        shadeCode: data.shadeCode,
+        shadeName: data.shadeName,
+        hexColor: data.hexColor,
+        confidence: data.confidence,
+      });
+
+      if (data.usage) {
+        addCost("Box read", data.usage.inputTokens, data.usage.outputTokens);
+      }
+
+      setBoxPreview(URL.createObjectURL(file));
+      setStep("shade-review");
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Something went wrong.");
+    } finally {
+      setLoading(false);
+    }
   }
 
-  function handlePhoto(file: File) {
-    setPhotoFile(file);
-    setPhotoPreview(URL.createObjectURL(file));
-    setResult(null);
-  }
-
-  async function runTryOn() {
-    if (!photoFile || !shade) return;
+  async function tryOn() {
+    if (!hairFile || !shade) return;
     setLoading(true);
     setError(null);
     setResult(null);
+
     try {
       const form = new FormData();
-      form.append("image", photoFile);
-      form.append("shadeName", shade.name);
-      form.append("hex", shade.hex);
-      if (shade.description) form.append("description", shade.description);
+      form.append("image", hairFile);
+      form.append("shadeName", shade.shadeName);
+      form.append("hex", shade.hexColor);
 
       const res = await fetch("/api/tryon", { method: "POST", body: form });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "Something went wrong.");
+
+      if (!res.ok) throw new Error(data.error ?? "Try-on failed.");
+
       setResult(data.image);
+      if (data.usage) {
+        addCost("Hair color apply", data.usage.inputTokens, data.usage.outputTokens);
+      }
+
       setStep("result");
     } catch (e) {
       setError(e instanceof Error ? e.message : "Something went wrong.");
@@ -57,20 +92,24 @@ export default function Home() {
   }
 
   function reset() {
-    setStep("scan");
+    setStep("box-photo");
     setShade(null);
-    setPhotoFile(null);
-    setPhotoPreview(null);
+    setBoxPreview(null);
+    setHairFile(null);
+    setHairPreview(null);
     setResult(null);
+    setCosts([]);
     setError(null);
   }
+
+  const totalCents = costs.reduce((sum, c) => sum + c.cents, 0);
 
   return (
     <main className="mx-auto flex w-full max-w-md flex-1 flex-col gap-6 px-5 py-10">
       <header className="text-center">
         <h1 className="text-2xl font-semibold tracking-tight">Hair Color Try-On</h1>
         <p className="mt-1 text-sm text-zinc-500">
-          Scan a product, upload a photo, preview the shade.
+          Photograph your product box, pick the shade, upload a selfie, preview the color.
         </p>
       </header>
 
@@ -82,25 +121,85 @@ export default function Home() {
         </p>
       )}
 
-      {step === "scan" && (
-        <section className="flex flex-col items-center gap-4">
-          <p className="text-center text-sm text-zinc-500">
-            Point your camera at the QR code on the product.
-          </p>
-          <QrScanner onResult={handleScan} />
+      {costs.length > 0 && (
+        <CostMeter costs={costs} totalCents={totalCents} />
+      )}
+
+      {step === "box-photo" && (
+        <section className="flex flex-col gap-4">
+          <label className="flex cursor-pointer flex-col items-center gap-3 rounded-2xl border-2 border-dashed border-black/10 px-6 py-10 text-center dark:border-white/15">
+            <span className="text-sm font-medium text-zinc-600 dark:text-zinc-400">
+              📦 Photograph the product box
+            </span>
+            <span className="text-xs text-zinc-500">Show the label with the shade code</span>
+            <input
+              type="file"
+              accept="image/*"
+              capture="environment"
+              className="hidden"
+              onChange={(e) => {
+                const f = e.target.files?.[0];
+                if (f) readBox(f);
+              }}
+            />
+          </label>
+          {loading && <p className="text-center text-sm text-zinc-500">Reading box…</p>}
         </section>
       )}
 
-      {step === "photo" && shade && (
+      {step === "shade-review" && shade && (
         <section className="flex flex-col gap-5">
-          <ShadeBadge shade={shade} />
+          {boxPreview && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={boxPreview} alt="Product box" className="max-h-48 self-center rounded-xl" />
+          )}
 
+          <div className="rounded-2xl border-2 border-black/10 p-4 dark:border-white/15">
+            <div className="mb-3 flex items-center gap-3">
+              <span
+                className="h-12 w-12 rounded-full border-2 border-black/10 dark:border-white/15"
+                style={{ backgroundColor: shade.hexColor }}
+              />
+              <div className="flex-1">
+                <p className="font-semibold">{shade.shadeName}</p>
+                <p className="text-sm text-zinc-500">{shade.shadeCode}</p>
+              </div>
+            </div>
+            <p className="text-xs text-zinc-500">
+              Confidence: <span className="capitalize">{shade.confidence}</span>
+            </p>
+            {shade.confidence !== "high" && (
+              <p className="mt-2 text-xs text-amber-600">
+                ⚠️ Low confidence reading. Result may not match the exact product shade.
+              </p>
+            )}
+          </div>
+
+          <div className="flex gap-3">
+            <button
+              onClick={() => setStep("box-photo")}
+              className="flex-1 rounded-full border border-black/10 px-4 py-3 text-sm dark:border-white/15"
+            >
+              Rescan
+            </button>
+            <button
+              onClick={() => setStep("hair-photo")}
+              className="flex-1 rounded-full bg-foreground px-4 py-3 text-sm font-medium text-background"
+            >
+              Use this shade
+            </button>
+          </div>
+        </section>
+      )}
+
+      {step === "hair-photo" && shade && (
+        <section className="flex flex-col gap-5">
           <label className="flex cursor-pointer flex-col items-center gap-3 rounded-2xl border-2 border-dashed border-black/10 px-6 py-10 text-center dark:border-white/15">
-            {photoPreview ? (
+            {hairPreview ? (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={photoPreview} alt="Your photo" className="max-h-64 rounded-xl" />
+              <img src={hairPreview} alt="Your photo" className="max-h-64 rounded-xl" />
             ) : (
-              <span className="text-sm text-zinc-500">Tap to choose or take a photo</span>
+              <span className="text-sm text-zinc-500">📸 Choose or take a selfie</span>
             )}
             <input
               type="file"
@@ -109,21 +208,27 @@ export default function Home() {
               className="hidden"
               onChange={(e) => {
                 const f = e.target.files?.[0];
-                if (f) handlePhoto(f);
+                if (f) {
+                  setHairFile(f);
+                  setHairPreview(URL.createObjectURL(f));
+                }
               }}
             />
           </label>
 
           <div className="flex gap-3">
-            <button onClick={reset} className="flex-1 rounded-full border border-black/10 px-4 py-3 text-sm dark:border-white/15">
+            <button
+              onClick={() => setStep("shade-review")}
+              className="flex-1 rounded-full border border-black/10 px-4 py-3 text-sm dark:border-white/15"
+            >
               Back
             </button>
             <button
-              onClick={runTryOn}
-              disabled={!photoFile || loading}
-              className="flex-2 rounded-full bg-foreground px-4 py-3 text-sm font-medium text-background disabled:opacity-40"
+              onClick={tryOn}
+              disabled={!hairFile || loading}
+              className="flex-1 rounded-full bg-foreground px-4 py-3 text-sm font-medium text-background disabled:opacity-40"
             >
-              {loading ? "Applying color…" : "Try this color"}
+              {loading ? "Applying…" : "Try color"}
             </button>
           </div>
         </section>
@@ -131,20 +236,27 @@ export default function Home() {
 
       {step === "result" && shade && (
         <section className="flex flex-col gap-5">
-          <ShadeBadge shade={shade} />
           <div className="grid grid-cols-2 gap-3">
-            <Figure label="Before" src={photoPreview} />
+            <Figure label="Before" src={hairPreview} />
             <Figure label="After" src={result} />
           </div>
+
           <p className="text-center text-xs text-zinc-400">
-            Preview only — real results vary with your natural hair color and bleaching.
+            ⚠️ Preview for hair dyed to {shade.shadeName}. Results vary by starting hair color and bleaching.
           </p>
+
           <div className="flex gap-3">
-            <button onClick={() => setStep("photo")} className="flex-1 rounded-full border border-black/10 px-4 py-3 text-sm dark:border-white/15">
+            <button
+              onClick={() => setStep("hair-photo")}
+              className="flex-1 rounded-full border border-black/10 px-4 py-3 text-sm dark:border-white/15"
+            >
               Try another photo
             </button>
-            <button onClick={reset} className="flex-1 rounded-full bg-foreground px-4 py-3 text-sm font-medium text-background">
-              New scan
+            <button
+              onClick={reset}
+              className="flex-1 rounded-full bg-foreground px-4 py-3 text-sm font-medium text-background"
+            >
+              New product
             </button>
           </div>
         </section>
@@ -154,8 +266,8 @@ export default function Home() {
 }
 
 function Stepper({ step }: { step: Step }) {
-  const steps: Step[] = ["scan", "photo", "result"];
-  const labels = { scan: "Scan", photo: "Photo", result: "Result" };
+  const steps: Step[] = ["box-photo", "shade-review", "hair-photo", "result"];
+  const labels = { "box-photo": "Box", "shade-review": "Shade", "hair-photo": "Photo", result: "Result" };
   const current = steps.indexOf(step);
   return (
     <div className="flex items-center justify-center gap-2 text-xs">
@@ -171,21 +283,6 @@ function Stepper({ step }: { step: Step }) {
   );
 }
 
-function ShadeBadge({ shade }: { shade: HairShade }) {
-  return (
-    <div className="flex items-center gap-3 rounded-2xl bg-zinc-50 px-4 py-3 dark:bg-zinc-900">
-      <span
-        className="h-10 w-10 rounded-full border border-black/10 dark:border-white/15"
-        style={{ backgroundColor: shade.hex }}
-      />
-      <div>
-        <p className="text-sm font-medium">{shade.name}</p>
-        <p className="text-xs text-zinc-500">{shade.hex}</p>
-      </div>
-    </div>
-  );
-}
-
 function Figure({ label, src }: { label: string; src: string | null }) {
   return (
     <figure className="flex flex-col gap-1">
@@ -197,5 +294,29 @@ function Figure({ label, src }: { label: string; src: string | null }) {
         <div className="aspect-square w-full rounded-xl bg-zinc-100 dark:bg-zinc-900" />
       )}
     </figure>
+  );
+}
+
+function CostMeter({ costs, totalCents }: { costs: CostEntry[]; totalCents: number }) {
+  return (
+    <div className="rounded-lg bg-zinc-50 px-4 py-3 dark:bg-zinc-900/50">
+      <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-zinc-600 dark:text-zinc-400">
+        API Costs (Gemini)
+      </p>
+      <div className="space-y-1 text-xs text-zinc-600 dark:text-zinc-400">
+        {costs.map((c, i) => (
+          <div key={i} className="flex justify-between">
+            <span>{c.label}</span>
+            <span className="font-mono">{formatCost(c.cents)}</span>
+          </div>
+        ))}
+      </div>
+      <div className="mt-3 border-t border-black/10 pt-2 dark:border-white/15">
+        <div className="flex justify-between font-semibold text-zinc-800 dark:text-zinc-200">
+          <span>Total this session</span>
+          <span className="font-mono">{formatCost(totalCents)}</span>
+        </div>
+      </div>
+    </div>
   );
 }

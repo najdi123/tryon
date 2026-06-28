@@ -103,5 +103,12 @@ export async function POST(request: NextRequest) {
   }
 
   const mime = imgPart.inlineData.mimeType ?? "image/png";
-  return Response.json({ image: `data:${mime};base64,${imgPart.inlineData.data}` });
+  const usage = data?.usageMetadata ?? {};
+  return Response.json({
+    image: `data:${mime};base64,${imgPart.inlineData.data}`,
+    usage: {
+      inputTokens: usage.promptTokenCount ?? 0,
+      outputTokens: usage.candidatesTokenCount ?? 0,
+    },
+  });
 }

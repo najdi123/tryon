@@ -16,6 +16,17 @@ type ShadeInfo = {
 
 type CostEntry = { label: string; cents: number };
 
+const PRESET_SHADES: Array<ShadeInfo & { path: "local" | "ai" }> = [
+  // Dark shades → local canvas recolor
+  { shadeCode: "3/0",  shadeName: "Dark Brown",       hexColor: "#2C1A0E", colorDescription: "deep dark brown, cool undertones",                             confidence: "high", path: "local" },
+  { shadeCode: "4/6",  shadeName: "Red Chestnut",     hexColor: "#8B3520", colorDescription: "warm medium brown with intense red undertones, glossy finish", confidence: "high", path: "local" },
+  { shadeCode: "5/5",  shadeName: "Light Mahogany",   hexColor: "#7B3F30", colorDescription: "warm light brown with mahogany-red reflect",                  confidence: "high", path: "local" },
+  // Light shades → Gemini AI recolor
+  { shadeCode: "8/3",  shadeName: "Light Gold Blonde", hexColor: "#D4A855", colorDescription: "light warm blonde with golden highlights, sun-kissed",        confidence: "high", path: "ai" },
+  { shadeCode: "9/1",  shadeName: "Very Light Ash",    hexColor: "#DDD0A0", colorDescription: "very light cool blonde, ash undertones, pearl finish",        confidence: "high", path: "ai" },
+  { shadeCode: "10/01",shadeName: "Platinum Blonde",   hexColor: "#EFE5CA", colorDescription: "lightest platinum blonde, icy cool tone, high-shine finish",  confidence: "high", path: "ai" },
+];
+
 export default function Home() {
   const [step, setStep] = useState<Step>("box-photo");
   const [shade, setShade] = useState<ShadeInfo | null>(null);
@@ -155,7 +166,7 @@ export default function Home() {
 
       {step === "box-photo" && (
         <section className="flex flex-col gap-4">
-          <label className="flex cursor-pointer flex-col items-center gap-3 rounded-2xl border-2 border-dashed border-black/10 px-6 py-10 text-center transition-colors hover:border-black/20 dark:border-white/15 dark:hover:border-white/25">
+          <label className="flex cursor-pointer flex-col items-center gap-3 rounded-2xl border-2 border-dashed border-black/10 px-6 py-8 text-center transition-colors hover:border-black/20 dark:border-white/15 dark:hover:border-white/25">
             <span className="text-4xl">📦</span>
             <span className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
               Photograph the product box
@@ -172,7 +183,62 @@ export default function Home() {
               }}
             />
           </label>
+
           {loadingStatus && <p className="text-center text-sm text-zinc-500">{loadingStatus}</p>}
+
+          <div className="flex items-center gap-3">
+            <div className="h-px flex-1 bg-black/10 dark:bg-white/10" />
+            <span className="text-xs text-zinc-400">or pick a preset shade</span>
+            <div className="h-px flex-1 bg-black/10 dark:bg-white/10" />
+          </div>
+
+          <div className="flex flex-col gap-2">
+            <p className="text-xs font-medium text-zinc-500">
+              Dark shades — <span className="text-emerald-600 dark:text-emerald-400">local recolor (free)</span>
+            </p>
+            <div className="grid grid-cols-3 gap-2">
+              {PRESET_SHADES.filter((s) => s.path === "local").map((preset) => (
+                <button
+                  key={preset.shadeCode}
+                  onClick={() => { setShade(preset); setStep("shade-review"); }}
+                  className="flex flex-col items-center gap-1.5 rounded-xl border border-black/10 p-3 text-center transition-colors hover:bg-zinc-50 dark:border-white/15 dark:hover:bg-zinc-900"
+                >
+                  <span
+                    className="h-10 w-10 rounded-full border-2 border-black/10 dark:border-white/15"
+                    style={{ backgroundColor: preset.hexColor }}
+                  />
+                  <span className="text-[11px] font-medium leading-tight text-zinc-700 dark:text-zinc-300">
+                    {preset.shadeName}
+                  </span>
+                  <span className="text-[10px] text-zinc-400">{preset.shadeCode}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-2">
+            <p className="text-xs font-medium text-zinc-500">
+              Light shades — <span className="text-blue-600 dark:text-blue-400">AI recolor (Gemini)</span>
+            </p>
+            <div className="grid grid-cols-3 gap-2">
+              {PRESET_SHADES.filter((s) => s.path === "ai").map((preset) => (
+                <button
+                  key={preset.shadeCode}
+                  onClick={() => { setShade(preset); setStep("shade-review"); }}
+                  className="flex flex-col items-center gap-1.5 rounded-xl border border-black/10 p-3 text-center transition-colors hover:bg-zinc-50 dark:border-white/15 dark:hover:bg-zinc-900"
+                >
+                  <span
+                    className="h-10 w-10 rounded-full border-2 border-black/10 dark:border-white/15"
+                    style={{ backgroundColor: preset.hexColor }}
+                  />
+                  <span className="text-[11px] font-medium leading-tight text-zinc-700 dark:text-zinc-300">
+                    {preset.shadeName}
+                  </span>
+                  <span className="text-[10px] text-zinc-400">{preset.shadeCode}</span>
+                </button>
+              ))}
+            </div>
+          </div>
         </section>
       )}
 

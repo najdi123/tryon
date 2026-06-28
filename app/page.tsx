@@ -18,16 +18,26 @@ type CostEntry = { label: string; cents: number };
 
 const PRESET_SHADES: Array<ShadeInfo & { path: "local" | "ai" }> = [
   // Dark shades → local canvas recolor
-  { shadeCode: "2/0",  shadeName: "Darkest Brown",    hexColor: "#1A0E08", colorDescription: "near-black darkest brown, neutral cool undertones",            confidence: "high", path: "local" },
-  { shadeCode: "3/0",  shadeName: "Dark Brown",       hexColor: "#2C1A0E", colorDescription: "deep dark brown, cool undertones",                             confidence: "high", path: "local" },
-  { shadeCode: "3/3",  shadeName: "Dark Golden Brown",hexColor: "#4A2A10", colorDescription: "dark brown with warm golden reflect",                          confidence: "high", path: "local" },
-  { shadeCode: "4/0",  shadeName: "Medium Brown",     hexColor: "#5C3520", colorDescription: "neutral medium brown, natural finish",                         confidence: "high", path: "local" },
-  { shadeCode: "4/6",  shadeName: "Red Chestnut",     hexColor: "#8B3520", colorDescription: "warm medium brown with intense red undertones, glossy finish",  confidence: "high", path: "local" },
-  { shadeCode: "5/5",  shadeName: "Light Mahogany",   hexColor: "#7B3F30", colorDescription: "warm light brown with mahogany-red reflect",                   confidence: "high", path: "local" },
+  { shadeCode: "1/0",  shadeName: "Natural Black",     hexColor: "#0D0905", colorDescription: "pure natural black, cool neutral undertones",                  confidence: "high", path: "local" },
+  { shadeCode: "2/0",  shadeName: "Darkest Brown",     hexColor: "#1A0E08", colorDescription: "near-black darkest brown, neutral cool undertones",            confidence: "high", path: "local" },
+  { shadeCode: "3/0",  shadeName: "Dark Brown",        hexColor: "#2C1A0E", colorDescription: "deep dark brown, cool undertones",                             confidence: "high", path: "local" },
+  { shadeCode: "3/3",  shadeName: "Dark Golden Brown", hexColor: "#4A2A10", colorDescription: "dark brown with warm golden reflect",                          confidence: "high", path: "local" },
+  { shadeCode: "3/66", shadeName: "Dark Intense Red",  hexColor: "#6B1510", colorDescription: "dark brown with very intense red-violet reflect",              confidence: "high", path: "local" },
+  { shadeCode: "4/0",  shadeName: "Medium Brown",      hexColor: "#5C3520", colorDescription: "neutral medium brown, natural finish",                         confidence: "high", path: "local" },
+  { shadeCode: "4/4",  shadeName: "Medium Copper",     hexColor: "#8B4015", colorDescription: "medium brown with warm copper-orange reflect, vibrant",        confidence: "high", path: "local" },
+  { shadeCode: "4/6",  shadeName: "Red Chestnut",      hexColor: "#8B3520", colorDescription: "warm medium brown with intense red undertones, glossy finish", confidence: "high", path: "local" },
+  { shadeCode: "5/0",  shadeName: "Light Brown",       hexColor: "#7A5030", colorDescription: "natural light brown, balanced warm-neutral tone",              confidence: "high", path: "local" },
   { shadeCode: "5/3",  shadeName: "Light Golden Brown",hexColor: "#8B6535", colorDescription: "light brown with warm golden and caramel tones",               confidence: "high", path: "local" },
-  { shadeCode: "6/1",  shadeName: "Dark Ash Blonde",  hexColor: "#7A6A55", colorDescription: "dark blonde with cool ash undertones, matte finish",            confidence: "high", path: "local" },
+  { shadeCode: "5/5",  shadeName: "Light Mahogany",    hexColor: "#7B3F30", colorDescription: "warm light brown with mahogany-red reflect",                   confidence: "high", path: "local" },
+  { shadeCode: "6/0",  shadeName: "Dark Blonde",       hexColor: "#9A7540", colorDescription: "dark blonde, natural warm tone, subtle golden reflect",        confidence: "high", path: "local" },
+  { shadeCode: "6/1",  shadeName: "Dark Ash Blonde",   hexColor: "#7A6A55", colorDescription: "dark blonde with cool ash undertones, matte finish",           confidence: "high", path: "local" },
   // Light shades → Gemini AI recolor
-  { shadeCode: "7/3",  shadeName: "Medium Golden Blonde", hexColor: "#BF9040", colorDescription: "medium warm blonde with golden honey tones",               confidence: "high", path: "ai" },
+  { shadeCode: "7/0",  shadeName: "Medium Blonde",     hexColor: "#C8A040", colorDescription: "medium natural blonde, warm balanced tone",                    confidence: "high", path: "ai" },
+  { shadeCode: "7/1",  shadeName: "Medium Ash Blonde", hexColor: "#B8A870", colorDescription: "medium blonde with cool ash undertones, pearl effect",         confidence: "high", path: "ai" },
+  { shadeCode: "7/3",  shadeName: "Medium Gold Blonde",hexColor: "#BF9040", colorDescription: "medium warm blonde with golden honey tones",                   confidence: "high", path: "ai" },
+  { shadeCode: "7/44", shadeName: "Medium Copper Blonde",hexColor: "#C86830", colorDescription: "medium blonde with intense warm copper-orange reflect",      confidence: "high", path: "ai" },
+  { shadeCode: "8/0",  shadeName: "Light Blonde",      hexColor: "#D4B060", colorDescription: "light natural blonde, warm luminous tone",                     confidence: "high", path: "ai" },
+  { shadeCode: "8/1",  shadeName: "Light Ash Blonde",  hexColor: "#D0C085", colorDescription: "light blonde with cool ash undertones, sophisticated finish",  confidence: "high", path: "ai" },
   { shadeCode: "8/3",  shadeName: "Light Gold Blonde", hexColor: "#D4A855", colorDescription: "light warm blonde with golden highlights, sun-kissed",         confidence: "high", path: "ai" },
   { shadeCode: "9/1",  shadeName: "Very Light Ash",    hexColor: "#DDD0A0", colorDescription: "very light cool blonde, ash undertones, pearl finish",         confidence: "high", path: "ai" },
   { shadeCode: "9/3",  shadeName: "Very Light Golden", hexColor: "#E2C87A", colorDescription: "very light warm blonde with golden shimmer",                   confidence: "high", path: "ai" },
@@ -178,11 +188,10 @@ export default function Home() {
             <span className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
               Photograph the product box
             </span>
-            <span className="text-xs text-zinc-400">Show the label with the shade code (e.g. 4/6)</span>
+            <span className="text-xs text-zinc-400">Camera or gallery — show the shade code label (e.g. 4/6)</span>
             <input
               type="file"
               accept="image/*"
-              capture="environment"
               className="hidden"
               onChange={(e) => {
                 const f = e.target.files?.[0];
@@ -299,14 +308,13 @@ export default function Home() {
             ) : (
               <>
                 <span className="text-4xl">📸</span>
-                <span className="text-sm text-zinc-500">Choose or take a selfie</span>
+                <span className="text-sm text-zinc-500">Take a selfie or choose from gallery</span>
                 <span className="text-xs text-zinc-400">Hair clearly visible works best</span>
               </>
             )}
             <input
               type="file"
               accept="image/*"
-              capture="user"
               className="hidden"
               onChange={(e) => {
                 const f = e.target.files?.[0];

@@ -8,29 +8,19 @@ const MAX_BYTES = 8 * 1024 * 1024; // 8 MB upload cap
 const ALLOWED_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
 
 function buildPrompt(shadeName: string, hex: string, description?: string): string {
-  const colorDetail = description || `a rich, dimensional ${shadeName.toLowerCase()} with natural shine`;
+  // Minimal, edit-focused instruction. For an editing model (Nano Banana), adding
+  // "boosters" like highlights/roots/gloss/lens makes it RE-RENDER the hair and change
+  // the style. We want a pure recolor of the existing pixels — so we describe the color
+  // plainly and otherwise demand the image stay identical.
+  const colorName = description ? `${shadeName} (${description})` : shadeName;
   return [
-    // Identity lock
-    "Photorealistic portrait edit of the exact same person with identical face and facial features.",
-    "Preserve the subject's identity, expression, pose, skin texture, makeup, and outfit completely.",
-    "",
-    // Hairstyle lock (critical to prevent AI redesign)
-    "Change ONLY the hair color. Keep the exact same hairstyle, hair length, cut, texture, volume, part, and styling unchanged.",
-    "Maintain original hair flow, strand pattern, wave pattern (or straightness), curl structure, and silhouette.",
-    "Do not alter hair thickness, density, or any structural elements.",
-    "",
-    // Color instruction with detail
-    `Recolor the hair to ${colorDetail} (hex ${hex}).`,
-    "Apply the color with realistic dimensional tones, natural darker roots, subtle highlights,",
-    "and a glossy healthy shine that matches the original hair's luster.",
-    "Account for how the dye would actually look over the person's current hair color and texture.",
-    "",
-    // Preserve everything else
-    "Preserve background, lighting, camera angle, and all other elements exactly.",
-    "",
-    // Quality/realism boosters
-    "Ultra-photorealistic, sharp strand detail, natural scalp shadow, salon-quality finish.",
-    "Do NOT change face, hairstyle, hair length, texture, volume, expression, or pose under any circumstances.",
+    `Using the provided photograph, change only the hair color to ${colorName}, approximately hex ${hex}.`,
+    "Recolor the existing hair only. Do NOT restyle, reshape, regenerate, lengthen, shorten, or move the hair.",
+    "Preserve the exact same hairstyle, haircut, hair length, outline/silhouette, parting, texture,",
+    "curl and wave pattern, volume, and the position of every individual strand, completely unchanged.",
+    "Keep the face, facial features, expression, skin, pose, clothing, background, and lighting identical.",
+    "The output must be the same photograph with nothing altered except the colour of the hair,",
+    "and it must look like a natural, unedited photograph.",
   ].join(" ");
 }
 
@@ -80,7 +70,8 @@ export async function POST(request: NextRequest) {
         ],
       },
     ],
-    generationConfig: { responseModalities: ["IMAGE"] },
+    // temperature 0 => most faithful to the input image (less creative re-rendering).
+    generationConfig: { responseModalities: ["IMAGE"], temperature: 0 },
   };
 
   let upstream: Response;

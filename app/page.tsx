@@ -9,6 +9,7 @@ type ShadeInfo = {
   shadeCode: string;
   shadeName: string;
   hexColor: string;
+  colorDescription: string;
   confidence: "high" | "medium" | "low";
 };
 
@@ -45,6 +46,7 @@ export default function Home() {
         shadeCode: data.shadeCode,
         shadeName: data.shadeName,
         hexColor: data.hexColor,
+        colorDescription: data.colorDescription,
         confidence: data.confidence,
       });
 

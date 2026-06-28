@@ -18,7 +18,10 @@ type CostEntry = { label: string; cents: number };
 
 const PRESET_SHADES: Array<ShadeInfo & { path: "local" | "ai" }> = [
   // Dark shades → local canvas recolor
-  { shadeCode: "3/0",  shadeName: "Dark Brown",       hexColor: "#2C1A0E", colorDescription: "deep dark brown, cool undertones",                             confidence: "high", path: "local" },
+  { shadeCode: "2/0",  shadeName: "Darkest Brown",    hexColor: "#1A0E08", colorDescription: "near-black darkest brown, neutral cool undertones",           confidence: "high", path: "local" },
+  { shadeCode: "3/0",  shadeName: "Dark Brown",       hexColor: "#2C1A0E", colorDescription: "deep dark brown, cool undertones",                            confidence: "high", path: "local" },
+  { shadeCode: "3/3",  shadeName: "Dark Golden Brown",hexColor: "#4A2A10", colorDescription: "dark brown with warm golden reflect",                         confidence: "high", path: "local" },
+  { shadeCode: "4/0",  shadeName: "Medium Brown",     hexColor: "#5C3520", colorDescription: "neutral medium brown, natural finish",                        confidence: "high", path: "local" },
   { shadeCode: "4/6",  shadeName: "Red Chestnut",     hexColor: "#8B3520", colorDescription: "warm medium brown with intense red undertones, glossy finish", confidence: "high", path: "local" },
   { shadeCode: "5/5",  shadeName: "Light Mahogany",   hexColor: "#7B3F30", colorDescription: "warm light brown with mahogany-red reflect",                  confidence: "high", path: "local" },
   // Light shades → Gemini AI recolor
@@ -196,12 +199,12 @@ export default function Home() {
             <p className="text-xs font-medium text-zinc-500">
               Dark shades — <span className="text-emerald-600 dark:text-emerald-400">local recolor (free)</span>
             </p>
-            <div className="grid grid-cols-3 gap-2">
+            <div className="flex flex-wrap gap-2">
               {PRESET_SHADES.filter((s) => s.path === "local").map((preset) => (
                 <button
                   key={preset.shadeCode}
                   onClick={() => { setShade(preset); setStep("shade-review"); }}
-                  className="flex flex-col items-center gap-1.5 rounded-xl border border-black/10 p-3 text-center transition-colors hover:bg-zinc-50 dark:border-white/15 dark:hover:bg-zinc-900"
+                  className="flex w-[30%] flex-col items-center gap-1.5 rounded-xl border border-black/10 p-3 text-center transition-colors hover:bg-zinc-50 dark:border-white/15 dark:hover:bg-zinc-900"
                 >
                   <span
                     className="h-10 w-10 rounded-full border-2 border-black/10 dark:border-white/15"

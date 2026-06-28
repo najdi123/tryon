@@ -188,7 +188,7 @@ export default function Home() {
             <span className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
               Photograph the product box
             </span>
-            <span className="text-xs text-zinc-400">Camera or gallery — show the shade code label (e.g. 4/6)</span>
+            <span className="text-xs text-zinc-400">Show the label with the shade code (e.g. 4/6)</span>
             <input
               type="file"
               accept="image/*"
@@ -301,30 +301,35 @@ export default function Home() {
 
       {step === "hair-photo" && shade && (
         <section className="flex flex-col gap-5">
-          <label className="flex cursor-pointer flex-col items-center gap-3 rounded-2xl border-2 border-dashed border-black/10 px-6 py-10 text-center transition-colors hover:border-black/20 dark:border-white/15 dark:hover:border-white/25">
-            {hairPreview ? (
-              // eslint-disable-next-line @next/next/no-img-element
+          {hairPreview ? (
+            <label className="flex cursor-pointer flex-col items-center gap-3 rounded-2xl border-2 border-dashed border-black/10 px-6 py-4 text-center transition-colors hover:border-black/20 dark:border-white/15 dark:hover:border-white/25">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={hairPreview} alt="Your photo" className="max-h-64 rounded-xl" />
-            ) : (
-              <>
-                <span className="text-4xl">📸</span>
-                <span className="text-sm text-zinc-500">Take a selfie or choose from gallery</span>
-                <span className="text-xs text-zinc-400">Hair clearly visible works best</span>
-              </>
-            )}
-            <input
-              type="file"
-              accept="image/*"
-              className="hidden"
-              onChange={(e) => {
-                const f = e.target.files?.[0];
-                if (f) {
-                  setHairFile(f);
-                  setHairPreview(URL.createObjectURL(f));
-                }
-              }}
-            />
-          </label>
+              <span className="text-xs text-zinc-400">Tap to change</span>
+              <input type="file" accept="image/*" className="hidden"
+                onChange={(e) => { const f = e.target.files?.[0]; if (f) { setHairFile(f); setHairPreview(URL.createObjectURL(f)); } }}
+              />
+            </label>
+          ) : (
+            <div className="flex gap-3">
+              <label className="flex flex-1 cursor-pointer flex-col items-center gap-2 rounded-2xl border-2 border-dashed border-black/10 px-4 py-8 text-center transition-colors hover:border-black/20 dark:border-white/15 dark:hover:border-white/25">
+                <span className="text-3xl">🤳</span>
+                <span className="text-sm font-medium text-zinc-700 dark:text-zinc-300">Take selfie</span>
+                <span className="text-xs text-zinc-400">Open camera</span>
+                <input type="file" accept="image/*" capture="user" className="hidden"
+                  onChange={(e) => { const f = e.target.files?.[0]; if (f) { setHairFile(f); setHairPreview(URL.createObjectURL(f)); } }}
+                />
+              </label>
+              <label className="flex flex-1 cursor-pointer flex-col items-center gap-2 rounded-2xl border-2 border-dashed border-black/10 px-4 py-8 text-center transition-colors hover:border-black/20 dark:border-white/15 dark:hover:border-white/25">
+                <span className="text-3xl">🖼️</span>
+                <span className="text-sm font-medium text-zinc-700 dark:text-zinc-300">Choose photo</span>
+                <span className="text-xs text-zinc-400">From gallery</span>
+                <input type="file" accept="image/*" className="hidden"
+                  onChange={(e) => { const f = e.target.files?.[0]; if (f) { setHairFile(f); setHairPreview(URL.createObjectURL(f)); } }}
+                />
+              </label>
+            </div>
+          )}
 
           {loadingStatus && (
             <p className="text-center text-sm text-zinc-500">{loadingStatus}</p>

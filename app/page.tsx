@@ -4,6 +4,7 @@ import { useState } from "react";
 import { computeCost, formatCost } from "@/lib/pricing";
 
 type Step = "box-photo" | "shade-review" | "hair-photo" | "result";
+type RecolorMethod = "local" | "ai";
 
 type ShadeInfo = {
   shadeCode: string;
@@ -22,7 +23,8 @@ export default function Home() {
   const [hairFile, setHairFile] = useState<File | null>(null);
   const [hairPreview, setHairPreview] = useState<string | null>(null);
   const [result, setResult] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [recolorMethod, setRecolorMethod] = useState<RecolorMethod | null>(null);
+  const [loadingStatus, setLoadingStatus] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [costs, setCosts] = useState<CostEntry[]>([]);
 
@@ -33,63 +35,88 @@ export default function Home() {
 
   async function readBox(file: File) {
     setError(null);
-    setLoading(true);
+    setLoadingStatus("Reading box…");
     try {
       const form = new FormData();
       form.append("image", file);
       const res = await fetch("/api/read-box", { method: "POST", body: form });
       const data = await res.json();
-
       if (!res.ok) throw new Error(data.error ?? "Failed to read box.");
-
       setShade({
         shadeCode: data.shadeCode,
         shadeName: data.shadeName,
         hexColor: data.hexColor,
-        colorDescription: data.colorDescription,
+        colorDescription: data.colorDescription ?? "",
         confidence: data.confidence,
       });
-
-      if (data.usage) {
-        addCost("Box read", data.usage.inputTokens, data.usage.outputTokens);
-      }
-
+      if (data.usage) addCost("Box read", data.usage.inputTokens, data.usage.outputTokens);
       setBoxPreview(URL.createObjectURL(file));
       setStep("shade-review");
     } catch (e) {
       setError(e instanceof Error ? e.message : "Something went wrong.");
     } finally {
-      setLoading(false);
+      setLoadingStatus(null);
     }
+  }
+
+  async function tryOnWithGemini(file: File, info: ShadeInfo): Promise<void> {
+    setLoadingStatus("Applying color with AI…");
+    const form = new FormData();
+    form.append("image", file);
+    form.append("shadeName", info.shadeName);
+    form.append("hex", info.hexColor);
+    if (info.colorDescription) form.append("description", info.colorDescription);
+
+    const res = await fetch("/api/tryon", { method: "POST", body: form });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error ?? "AI try-on failed.");
+    setResult(data.image);
+    if (data.usage) addCost("Hair color apply (AI)", data.usage.inputTokens, data.usage.outputTokens);
+    setRecolorMethod("ai");
   }
 
   async function tryOn() {
     if (!hairFile || !shade) return;
-    setLoading(true);
+    setLoadingStatus("Segmenting hair…");
     setError(null);
     setResult(null);
+    setRecolorMethod(null);
 
     try {
-      const form = new FormData();
-      form.append("image", hairFile);
-      form.append("shadeName", shade.shadeName);
-      form.append("hex", shade.hexColor);
+      // Attempt local recolor via MediaPipe hair segmentation
+      let usedLocal = false;
+      try {
+        setLoadingStatus("Loading hair segmenter (first run may take a few seconds)…");
+        const { recolorHair, needsGemini } = await import("@/lib/hair-recolor");
 
-      const res = await fetch("/api/tryon", { method: "POST", body: form });
-      const data = await res.json();
+        setLoadingStatus("Segmenting hair…");
+        const local = await recolorHair(hairFile, shade.hexColor);
 
-      if (!res.ok) throw new Error(data.error ?? "Try-on failed.");
+        const tooFewHairPixels = local.hairPixelCount < 500;
+        const requiresBleaching = needsGemini(local.avgHairLightness, shade.hexColor);
 
-      setResult(data.image);
-      if (data.usage) {
-        addCost("Hair color apply", data.usage.inputTokens, data.usage.outputTokens);
+        if (!tooFewHairPixels && !requiresBleaching) {
+          setResult(local.dataUrl);
+          setRecolorMethod("local");
+          usedLocal = true;
+        } else if (requiresBleaching) {
+          // Show local result briefly while AI runs, or just run AI
+          setLoadingStatus("Target shade is lighter — using AI for better bleach simulation…");
+        }
+      } catch (localErr) {
+        console.warn("Local recolor failed, falling back to AI:", localErr);
+        setLoadingStatus("Falling back to AI…");
+      }
+
+      if (!usedLocal) {
+        await tryOnWithGemini(hairFile, shade);
       }
 
       setStep("result");
     } catch (e) {
       setError(e instanceof Error ? e.message : "Something went wrong.");
     } finally {
-      setLoading(false);
+      setLoadingStatus(null);
     }
   }
 
@@ -100,6 +127,7 @@ export default function Home() {
     setHairFile(null);
     setHairPreview(null);
     setResult(null);
+    setRecolorMethod(null);
     setCosts([]);
     setError(null);
   }
@@ -123,17 +151,16 @@ export default function Home() {
         </p>
       )}
 
-      {costs.length > 0 && (
-        <CostMeter costs={costs} totalCents={totalCents} />
-      )}
+      {costs.length > 0 && <CostMeter costs={costs} totalCents={totalCents} />}
 
       {step === "box-photo" && (
         <section className="flex flex-col gap-4">
-          <label className="flex cursor-pointer flex-col items-center gap-3 rounded-2xl border-2 border-dashed border-black/10 px-6 py-10 text-center dark:border-white/15">
-            <span className="text-sm font-medium text-zinc-600 dark:text-zinc-400">
-              📦 Photograph the product box
+          <label className="flex cursor-pointer flex-col items-center gap-3 rounded-2xl border-2 border-dashed border-black/10 px-6 py-10 text-center transition-colors hover:border-black/20 dark:border-white/15 dark:hover:border-white/25">
+            <span className="text-4xl">📦</span>
+            <span className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
+              Photograph the product box
             </span>
-            <span className="text-xs text-zinc-500">Show the label with the shade code</span>
+            <span className="text-xs text-zinc-400">Show the label with the shade code (e.g. 4/6)</span>
             <input
               type="file"
               accept="image/*"
@@ -145,7 +172,7 @@ export default function Home() {
               }}
             />
           </label>
-          {loading && <p className="text-center text-sm text-zinc-500">Reading box…</p>}
+          {loadingStatus && <p className="text-center text-sm text-zinc-500">{loadingStatus}</p>}
         </section>
       )}
 
@@ -153,27 +180,23 @@ export default function Home() {
         <section className="flex flex-col gap-5">
           {boxPreview && (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={boxPreview} alt="Product box" className="max-h-48 self-center rounded-xl" />
+            <img src={boxPreview} alt="Product box" className="max-h-48 self-center rounded-xl object-contain" />
           )}
 
           <div className="rounded-2xl border-2 border-black/10 p-4 dark:border-white/15">
             <div className="mb-3 flex items-center gap-3">
               <span
-                className="h-12 w-12 rounded-full border-2 border-black/10 dark:border-white/15"
+                className="h-12 w-12 flex-shrink-0 rounded-full border-2 border-black/10 dark:border-white/15"
                 style={{ backgroundColor: shade.hexColor }}
               />
-              <div className="flex-1">
-                <p className="font-semibold">{shade.shadeName}</p>
+              <div className="flex-1 min-w-0">
+                <p className="font-semibold truncate">{shade.shadeName}</p>
                 <p className="text-sm text-zinc-500">{shade.shadeCode}</p>
               </div>
+              <ConfidenceBadge confidence={shade.confidence} />
             </div>
-            <p className="text-xs text-zinc-500">
-              Confidence: <span className="capitalize">{shade.confidence}</span>
-            </p>
-            {shade.confidence !== "high" && (
-              <p className="mt-2 text-xs text-amber-600">
-                ⚠️ Low confidence reading. Result may not match the exact product shade.
-              </p>
+            {shade.colorDescription && (
+              <p className="text-xs text-zinc-500 leading-relaxed">{shade.colorDescription}</p>
             )}
           </div>
 
@@ -196,12 +219,16 @@ export default function Home() {
 
       {step === "hair-photo" && shade && (
         <section className="flex flex-col gap-5">
-          <label className="flex cursor-pointer flex-col items-center gap-3 rounded-2xl border-2 border-dashed border-black/10 px-6 py-10 text-center dark:border-white/15">
+          <label className="flex cursor-pointer flex-col items-center gap-3 rounded-2xl border-2 border-dashed border-black/10 px-6 py-10 text-center transition-colors hover:border-black/20 dark:border-white/15 dark:hover:border-white/25">
             {hairPreview ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img src={hairPreview} alt="Your photo" className="max-h-64 rounded-xl" />
             ) : (
-              <span className="text-sm text-zinc-500">📸 Choose or take a selfie</span>
+              <>
+                <span className="text-4xl">📸</span>
+                <span className="text-sm text-zinc-500">Choose or take a selfie</span>
+                <span className="text-xs text-zinc-400">Hair clearly visible works best</span>
+              </>
             )}
             <input
               type="file"
@@ -218,19 +245,24 @@ export default function Home() {
             />
           </label>
 
+          {loadingStatus && (
+            <p className="text-center text-sm text-zinc-500">{loadingStatus}</p>
+          )}
+
           <div className="flex gap-3">
             <button
               onClick={() => setStep("shade-review")}
-              className="flex-1 rounded-full border border-black/10 px-4 py-3 text-sm dark:border-white/15"
+              disabled={!!loadingStatus}
+              className="flex-1 rounded-full border border-black/10 px-4 py-3 text-sm disabled:opacity-40 dark:border-white/15"
             >
               Back
             </button>
             <button
               onClick={tryOn}
-              disabled={!hairFile || loading}
+              disabled={!hairFile || !!loadingStatus}
               className="flex-1 rounded-full bg-foreground px-4 py-3 text-sm font-medium text-background disabled:opacity-40"
             >
-              {loading ? "Applying…" : "Try color"}
+              {loadingStatus ? "Working…" : "Try color"}
             </button>
           </div>
         </section>
@@ -243,9 +275,19 @@ export default function Home() {
             <Figure label="After" src={result} />
           </div>
 
-          <p className="text-center text-xs text-zinc-400">
-            ⚠️ Preview for hair dyed to {shade.shadeName}. Results vary by starting hair color and bleaching.
-          </p>
+          <div className="flex flex-col gap-1 text-center">
+            {recolorMethod === "local" && (
+              <p className="text-xs font-medium text-emerald-600 dark:text-emerald-400">
+                ✓ Local recolor — hairstyle fully preserved, no AI cost
+              </p>
+            )}
+            {recolorMethod === "ai" && (
+              <p className="text-xs text-zinc-400">AI recolor (Gemini)</p>
+            )}
+            <p className="text-xs text-zinc-400">
+              Preview: {shade.shadeName}. Results vary by starting hair color.
+            </p>
+          </div>
 
           <div className="flex gap-3">
             <button
@@ -269,7 +311,12 @@ export default function Home() {
 
 function Stepper({ step }: { step: Step }) {
   const steps: Step[] = ["box-photo", "shade-review", "hair-photo", "result"];
-  const labels = { "box-photo": "Box", "shade-review": "Shade", "hair-photo": "Photo", result: "Result" };
+  const labels: Record<Step, string> = {
+    "box-photo": "Box",
+    "shade-review": "Shade",
+    "hair-photo": "Photo",
+    result: "Result",
+  };
   const current = steps.indexOf(step);
   return (
     <div className="flex items-center justify-center gap-2 text-xs">
@@ -282,6 +329,18 @@ function Stepper({ step }: { step: Step }) {
         </span>
       ))}
     </div>
+  );
+}
+
+function ConfidenceBadge({ confidence }: { confidence: string }) {
+  const map: Record<string, { label: string; cls: string }> = {
+    high: { label: "High", cls: "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300" },
+    medium: { label: "Medium", cls: "bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300" },
+    low: { label: "Low", cls: "bg-red-50 text-red-700 dark:bg-red-950/40 dark:text-red-300" },
+  };
+  const c = map[confidence] ?? map.low;
+  return (
+    <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${c.cls}`}>{c.label}</span>
   );
 }
 
@@ -299,10 +358,10 @@ function Figure({ label, src }: { label: string; src: string | null }) {
   );
 }
 
-function CostMeter({ costs, totalCents }: { costs: CostEntry[]; totalCents: number }) {
+function CostMeter({ costs, totalCents }: { costs: Array<{ label: string; cents: number }>; totalCents: number }) {
   return (
     <div className="rounded-lg bg-zinc-50 px-4 py-3 dark:bg-zinc-900/50">
-      <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-zinc-600 dark:text-zinc-400">
+      <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-zinc-500">
         API Costs (Gemini)
       </p>
       <div className="space-y-1 text-xs text-zinc-600 dark:text-zinc-400">
@@ -313,8 +372,8 @@ function CostMeter({ costs, totalCents }: { costs: CostEntry[]; totalCents: numb
           </div>
         ))}
       </div>
-      <div className="mt-3 border-t border-black/10 pt-2 dark:border-white/15">
-        <div className="flex justify-between font-semibold text-zinc-800 dark:text-zinc-200">
+      <div className="mt-2 border-t border-black/10 pt-2 dark:border-white/15">
+        <div className="flex justify-between text-xs font-semibold text-zinc-800 dark:text-zinc-200">
           <span>Total this session</span>
           <span className="font-mono">{formatCost(totalCents)}</span>
         </div>

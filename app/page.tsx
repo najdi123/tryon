@@ -18,16 +18,20 @@ type CostEntry = { label: string; cents: number };
 
 const PRESET_SHADES: Array<ShadeInfo & { path: "local" | "ai" }> = [
   // Dark shades → local canvas recolor
-  { shadeCode: "2/0",  shadeName: "Darkest Brown",    hexColor: "#1A0E08", colorDescription: "near-black darkest brown, neutral cool undertones",           confidence: "high", path: "local" },
-  { shadeCode: "3/0",  shadeName: "Dark Brown",       hexColor: "#2C1A0E", colorDescription: "deep dark brown, cool undertones",                            confidence: "high", path: "local" },
-  { shadeCode: "3/3",  shadeName: "Dark Golden Brown",hexColor: "#4A2A10", colorDescription: "dark brown with warm golden reflect",                         confidence: "high", path: "local" },
-  { shadeCode: "4/0",  shadeName: "Medium Brown",     hexColor: "#5C3520", colorDescription: "neutral medium brown, natural finish",                        confidence: "high", path: "local" },
-  { shadeCode: "4/6",  shadeName: "Red Chestnut",     hexColor: "#8B3520", colorDescription: "warm medium brown with intense red undertones, glossy finish", confidence: "high", path: "local" },
-  { shadeCode: "5/5",  shadeName: "Light Mahogany",   hexColor: "#7B3F30", colorDescription: "warm light brown with mahogany-red reflect",                  confidence: "high", path: "local" },
+  { shadeCode: "2/0",  shadeName: "Darkest Brown",    hexColor: "#1A0E08", colorDescription: "near-black darkest brown, neutral cool undertones",            confidence: "high", path: "local" },
+  { shadeCode: "3/0",  shadeName: "Dark Brown",       hexColor: "#2C1A0E", colorDescription: "deep dark brown, cool undertones",                             confidence: "high", path: "local" },
+  { shadeCode: "3/3",  shadeName: "Dark Golden Brown",hexColor: "#4A2A10", colorDescription: "dark brown with warm golden reflect",                          confidence: "high", path: "local" },
+  { shadeCode: "4/0",  shadeName: "Medium Brown",     hexColor: "#5C3520", colorDescription: "neutral medium brown, natural finish",                         confidence: "high", path: "local" },
+  { shadeCode: "4/6",  shadeName: "Red Chestnut",     hexColor: "#8B3520", colorDescription: "warm medium brown with intense red undertones, glossy finish",  confidence: "high", path: "local" },
+  { shadeCode: "5/5",  shadeName: "Light Mahogany",   hexColor: "#7B3F30", colorDescription: "warm light brown with mahogany-red reflect",                   confidence: "high", path: "local" },
+  { shadeCode: "5/3",  shadeName: "Light Golden Brown",hexColor: "#8B6535", colorDescription: "light brown with warm golden and caramel tones",               confidence: "high", path: "local" },
+  { shadeCode: "6/1",  shadeName: "Dark Ash Blonde",  hexColor: "#7A6A55", colorDescription: "dark blonde with cool ash undertones, matte finish",            confidence: "high", path: "local" },
   // Light shades → Gemini AI recolor
-  { shadeCode: "8/3",  shadeName: "Light Gold Blonde", hexColor: "#D4A855", colorDescription: "light warm blonde with golden highlights, sun-kissed",        confidence: "high", path: "ai" },
-  { shadeCode: "9/1",  shadeName: "Very Light Ash",    hexColor: "#DDD0A0", colorDescription: "very light cool blonde, ash undertones, pearl finish",        confidence: "high", path: "ai" },
-  { shadeCode: "10/01",shadeName: "Platinum Blonde",   hexColor: "#EFE5CA", colorDescription: "lightest platinum blonde, icy cool tone, high-shine finish",  confidence: "high", path: "ai" },
+  { shadeCode: "7/3",  shadeName: "Medium Golden Blonde", hexColor: "#BF9040", colorDescription: "medium warm blonde with golden honey tones",               confidence: "high", path: "ai" },
+  { shadeCode: "8/3",  shadeName: "Light Gold Blonde", hexColor: "#D4A855", colorDescription: "light warm blonde with golden highlights, sun-kissed",         confidence: "high", path: "ai" },
+  { shadeCode: "9/1",  shadeName: "Very Light Ash",    hexColor: "#DDD0A0", colorDescription: "very light cool blonde, ash undertones, pearl finish",         confidence: "high", path: "ai" },
+  { shadeCode: "9/3",  shadeName: "Very Light Golden", hexColor: "#E2C87A", colorDescription: "very light warm blonde with golden shimmer",                   confidence: "high", path: "ai" },
+  { shadeCode: "10/01",shadeName: "Platinum Blonde",   hexColor: "#EFE5CA", colorDescription: "lightest platinum blonde, icy cool tone, high-shine finish",   confidence: "high", path: "ai" },
 ];
 
 export default function Home() {

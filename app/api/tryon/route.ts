@@ -7,21 +7,21 @@ const ENDPOINT = `https://generativelanguage.googleapis.com/v1beta/models/${MODE
 const MAX_BYTES = 8 * 1024 * 1024; // 8 MB upload cap
 const ALLOWED_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
 
-function buildPrompt(shadeName: string, hex: string, description?: string): string {
-  // Minimal, edit-focused instruction. For an editing model (Nano Banana), adding
-  // "boosters" like highlights/roots/gloss/lens makes it RE-RENDER the hair and change
-  // the style. We want a pure recolor of the existing pixels — so we describe the color
-  // plainly and otherwise demand the image stay identical.
+function buildPrompt(shadeName: string, hex: string, description?: string, hairType?: string): string {
   const colorName = description ? `${shadeName} (${description})` : shadeName;
+  const hairTypeClause = hairType
+    ? `The person's hair is naturally ${hairType} — preserve this exact ${hairType} texture and pattern completely.`
+    : "";
   return [
     `Using the provided photograph, change only the hair color to ${colorName}, approximately hex ${hex}.`,
     "Recolor the existing hair only. Do NOT restyle, reshape, regenerate, lengthen, shorten, or move the hair.",
+    hairTypeClause,
     "Preserve the exact same hairstyle, haircut, hair length, outline/silhouette, parting, texture,",
     "curl and wave pattern, volume, and the position of every individual strand, completely unchanged.",
     "Keep the face, facial features, expression, skin, pose, clothing, background, and lighting identical.",
     "The output must be the same photograph with nothing altered except the colour of the hair,",
     "and it must look like a natural, unedited photograph.",
-  ].join(" ");
+  ].filter(Boolean).join(" ");
 }
 
 export async function POST(request: NextRequest) {
@@ -44,6 +44,7 @@ export async function POST(request: NextRequest) {
   const shadeName = String(form.get("shadeName") ?? "").trim();
   const hex = String(form.get("hex") ?? "").trim();
   const description = String(form.get("description") ?? "").trim() || undefined;
+  const hairType = String(form.get("hairType") ?? "").trim() || undefined;
 
   if (!(image instanceof File)) {
     return Response.json({ error: "No image file provided." }, { status: 400 });
@@ -65,7 +66,7 @@ export async function POST(request: NextRequest) {
       {
         role: "user",
         parts: [
-          { text: buildPrompt(shadeName, hex, description) },
+          { text: buildPrompt(shadeName, hex, description, hairType) },
           { inlineData: { mimeType: image.type, data: base64 } },
         ],
       },

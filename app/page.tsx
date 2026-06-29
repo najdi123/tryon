@@ -5,6 +5,7 @@ import { computeCost, formatCost } from "@/lib/pricing";
 
 type Step = "box-photo" | "shade-review" | "hair-photo" | "result";
 type RecolorMethod = "local" | "ai";
+type HairType = "straight" | "wavy" | "curly" | "coily";
 
 type ShadeInfo = {
   shadeCode: string;
@@ -52,6 +53,7 @@ export default function Home() {
   const [hairPreview, setHairPreview] = useState<string | null>(null);
   const [result, setResult] = useState<string | null>(null);
   const [recolorMethod, setRecolorMethod] = useState<RecolorMethod | null>(null);
+  const [hairType, setHairType] = useState<HairType | null>(null);
   const [loadingStatus, setLoadingStatus] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [costs, setCosts] = useState<CostEntry[]>([]);
@@ -94,6 +96,7 @@ export default function Home() {
     form.append("shadeName", info.shadeName);
     form.append("hex", info.hexColor);
     if (info.colorDescription) form.append("description", info.colorDescription);
+    if (hairType) form.append("hairType", hairType);
 
     const res = await fetch("/api/tryon", { method: "POST", body: form });
     const data = await res.json();
@@ -156,6 +159,7 @@ export default function Home() {
     setHairPreview(null);
     setResult(null);
     setRecolorMethod(null);
+    setHairType(null);
     setCosts([]);
     setError(null);
   }
@@ -183,22 +187,28 @@ export default function Home() {
 
       {step === "box-photo" && (
         <section className="flex flex-col gap-4">
-          <label className="flex cursor-pointer flex-col items-center gap-3 rounded-2xl border-2 border-dashed border-black/10 px-6 py-8 text-center transition-colors hover:border-black/20 dark:border-white/15 dark:hover:border-white/25">
-            <span className="text-4xl">📦</span>
-            <span className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
-              Photograph the product box
-            </span>
-            <span className="text-xs text-zinc-400">Show the label with the shade code (e.g. 4/6)</span>
-            <input
-              type="file"
-              accept="image/*"
-              className="hidden"
-              onChange={(e) => {
-                const f = e.target.files?.[0];
-                if (f) readBox(f);
-              }}
-            />
-          </label>
+          <p className="text-center text-sm font-medium text-zinc-700 dark:text-zinc-300">
+            📦 Photograph the product box
+          </p>
+          <p className="text-center text-xs text-zinc-400 -mt-2">Show the label with the shade code (e.g. 4/6)</p>
+          <div className="flex gap-3">
+            <label className="flex flex-1 cursor-pointer flex-col items-center gap-2 rounded-2xl border-2 border-dashed border-black/10 px-4 py-6 text-center transition-colors hover:border-black/20 dark:border-white/15 dark:hover:border-white/25">
+              <span className="text-3xl">📷</span>
+              <span className="text-sm font-medium text-zinc-700 dark:text-zinc-300">Take photo</span>
+              <span className="text-xs text-zinc-400">Open camera</span>
+              <input type="file" accept="image/*" capture="environment" className="hidden"
+                onChange={(e) => { const f = e.target.files?.[0]; if (f) readBox(f); }}
+              />
+            </label>
+            <label className="flex flex-1 cursor-pointer flex-col items-center gap-2 rounded-2xl border-2 border-dashed border-black/10 px-4 py-6 text-center transition-colors hover:border-black/20 dark:border-white/15 dark:hover:border-white/25">
+              <span className="text-3xl">🖼️</span>
+              <span className="text-sm font-medium text-zinc-700 dark:text-zinc-300">Choose image</span>
+              <span className="text-xs text-zinc-400">From gallery</span>
+              <input type="file" accept="image/*" className="hidden"
+                onChange={(e) => { const f = e.target.files?.[0]; if (f) readBox(f); }}
+              />
+            </label>
+          </div>
 
           {loadingStatus && <p className="text-center text-sm text-zinc-500">{loadingStatus}</p>}
 
@@ -328,6 +338,27 @@ export default function Home() {
                   onChange={(e) => { const f = e.target.files?.[0]; if (f) { setHairFile(f); setHairPreview(URL.createObjectURL(f)); } }}
                 />
               </label>
+            </div>
+          )}
+
+          {hairFile && (
+            <div className="flex flex-col gap-2">
+              <p className="text-xs font-medium text-zinc-500">Hair type <span className="font-normal text-zinc-400">(helps preserve style)</span></p>
+              <div className="grid grid-cols-4 gap-2">
+                {(["straight", "wavy", "curly", "coily"] as HairType[]).map((type) => (
+                  <button
+                    key={type}
+                    onClick={() => setHairType(hairType === type ? null : type)}
+                    className={`rounded-xl border px-2 py-2.5 text-xs font-medium capitalize transition-colors ${
+                      hairType === type
+                        ? "border-foreground bg-foreground text-background"
+                        : "border-black/10 text-zinc-600 hover:bg-zinc-50 dark:border-white/15 dark:text-zinc-400 dark:hover:bg-zinc-900"
+                    }`}
+                  >
+                    {type}
+                  </button>
+                ))}
+              </div>
             </div>
           )}
 

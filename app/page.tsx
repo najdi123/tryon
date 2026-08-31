@@ -50,6 +50,7 @@ export default function Home() {
   const [hairPreview, setHairPreview] = useState<string | null>(null);
   const [results, setResults] = useState<TryOnResult[]>([]);
   const [hairType, setHairType] = useState<HairType | null>(null);
+  const [includeEyebrows, setIncludeEyebrows] = useState(false);
   const [loadingStatus, setLoadingStatus] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [note, setNote] = useState<string | null>(null);
@@ -118,6 +119,7 @@ export default function Home() {
       setScanned({
         shadeCode: data.shadeCode,
         shadeName: data.shadeName,
+        nameFa: data.nameFa,
         hexColor: data.hexColor,
         colorDescription: data.colorDescription ?? "",
         confidence: data.confidence,
@@ -142,6 +144,7 @@ export default function Home() {
     form.append("hex", info.hexColor);
     if (info.colorDescription) form.append("description", info.colorDescription);
     if (hairType) form.append("hairType", hairType);
+    form.append("eyebrows", includeEyebrows ? "true" : "false");
 
     const res = await fetch("/api/tryon", { method: "POST", body: form });
     const data = await res.json();
@@ -185,8 +188,11 @@ export default function Home() {
       );
       try {
         let outcome: { image: string; method: RecolorMethod };
+        // The on-device segmenter has no eyebrow class, so recoloring brows
+        // is only possible on the Gemini path.
         const canDoLocally =
           prep !== null &&
+          !includeEyebrows &&
           prep.hairPixelCount >= 500 &&
           !needsGemini(prep.avgHairLightness, shade.hexColor);
 
@@ -225,6 +231,7 @@ export default function Home() {
     setHairPreview(null);
     setResults([]);
     setHairType(null);
+    setIncludeEyebrows(false);
     setCosts([]);
     setError(null);
     setNote(null);
@@ -488,26 +495,39 @@ export default function Home() {
           )}
 
           {hairFile && (
-            <div className="flex flex-col gap-2">
-              <p className="text-xs font-medium text-ink-sub">
-                نوع مو <span className="font-normal text-ink-faint">(برای حفظ حالت مو)</span>
-              </p>
-              <div className="grid grid-cols-4 gap-2">
-                {(Object.keys(HAIR_TYPE_LABEL) as HairType[]).map((type) => (
-                  <button
-                    key={type}
-                    onClick={() => setHairType(hairType === type ? null : type)}
-                    className={`rounded-xl border px-2 py-2.5 text-xs font-medium transition-colors ${
-                      hairType === type
-                        ? "border-transparent bg-gold-icon text-cta-ink"
-                        : "border-[color:var(--line-panel)] text-ink-sub hover:bg-[rgba(226,196,137,.1)]"
-                    }`}
-                  >
-                    {HAIR_TYPE_LABEL[type]}
-                  </button>
-                ))}
+            <>
+              <div className="flex flex-col gap-2">
+                <p className="text-xs font-medium text-ink-sub">
+                  نوع مو <span className="font-normal text-ink-faint">(برای حفظ حالت مو)</span>
+                </p>
+                <div className="grid grid-cols-4 gap-2">
+                  {(Object.keys(HAIR_TYPE_LABEL) as HairType[]).map((type) => (
+                    <button
+                      key={type}
+                      onClick={() => setHairType(hairType === type ? null : type)}
+                      className={`rounded-xl border px-2 py-2.5 text-xs font-medium transition-colors ${
+                        hairType === type
+                          ? "border-transparent bg-gold-icon text-cta-ink"
+                          : "border-[color:var(--line-panel)] text-ink-sub hover:bg-[rgba(226,196,137,.1)]"
+                      }`}
+                    >
+                      {HAIR_TYPE_LABEL[type]}
+                    </button>
+                  ))}
+                </div>
               </div>
-            </div>
+
+              <Toggle
+                checked={includeEyebrows}
+                onChange={setIncludeEyebrows}
+                label="تغییر رنگ ابروها"
+                hint={
+                  includeEyebrows
+                    ? "ابروها هم‌رنگ مو می‌شوند. برای این کار همه رنگ‌ها با هوش مصنوعی پردازش می‌شوند."
+                    : "ابروها با رنگ طبیعی خودشان باقی می‌مانند."
+                }
+              />
+            </>
           )}
 
           <div className="flex gap-3">
@@ -811,6 +831,49 @@ function PickerTile({
         }}
       />
     </label>
+  );
+}
+
+function Toggle({
+  checked,
+  onChange,
+  label,
+  hint,
+}: {
+  checked: boolean;
+  onChange: (next: boolean) => void;
+  label: string;
+  hint: string;
+}) {
+  return (
+    <button
+      type="button"
+      role="switch"
+      aria-checked={checked}
+      onClick={() => onChange(!checked)}
+      className={`flex items-center gap-3 rounded-2xl border p-3.5 text-right transition-colors ${
+        checked
+          ? "border-gold-icon bg-[rgba(226,196,137,.1)]"
+          : "border-[color:var(--line-panel)] hover:bg-[rgba(226,196,137,.06)]"
+      }`}
+    >
+      <span
+        aria-hidden
+        className={`relative h-6 w-11 flex-none rounded-full transition-colors ${
+          checked ? "bg-gold-icon" : "bg-[rgba(226,196,137,.2)]"
+        }`}
+      >
+        <span
+          className={`absolute top-0.5 h-5 w-5 rounded-full bg-[color:var(--stage-base)] transition-all ${
+            checked ? "right-[22px]" : "right-0.5"
+          }`}
+        />
+      </span>
+      <span className="flex flex-col gap-0.5">
+        <span className="text-sm font-medium text-gold-title">{label}</span>
+        <span className="text-[11px] leading-relaxed text-ink-faint">{hint}</span>
+      </span>
+    </button>
   );
 }
 

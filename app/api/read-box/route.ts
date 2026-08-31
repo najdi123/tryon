@@ -15,12 +15,16 @@ Respond with ONLY a JSON object with NO markdown or extra text:
 {
   "shadeCode": "4/6",
   "shadeName": "Red Chestnut",
+  "nameFa": "شاه‌بلوطی قرمز",
   "hexColor": "#a8431f",
   "colorDescription": "warm medium brown with red undertones, glossy finish, suitable for adding richness and shine to brunette hair",
   "confidence": "high|medium|low"
 }
 
-The colorDescription should be detailed enough for a photorealistic hair color application (mention warmth, depth, shine, undertones).
+"nameFa" is the shade name in Persian (Farsi) — this is what the user sees, so it must be natural Persian, not a transliteration.
+"hexColor" MUST be a 6-digit hex colour in the form #rrggbb.
+The colorDescription must stay in ENGLISH — it is fed to an image model — and be detailed enough for a
+photorealistic hair color application (mention warmth, depth, shine, undertones).
 If you cannot extract something with high confidence, use your best estimate and set confidence accordingly.`;
 
 export async function POST(request: NextRequest) {
@@ -56,6 +60,9 @@ export async function POST(request: NextRequest) {
         ],
       },
     ],
+    // Ask for JSON directly rather than trusting the prompt's "no markdown",
+    // and keep extraction deterministic.
+    generationConfig: { responseMimeType: "application/json", temperature: 0 },
   };
 
   let upstream: Response;
@@ -78,9 +85,18 @@ export async function POST(request: NextRequest) {
   const data = await upstream.json();
   const text = data?.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
 
-  let parsed: { shadeCode?: string; shadeName?: string; hexColor?: string; confidence?: string,colorDescription?:string } = {};
+  let parsed: {
+    shadeCode?: string;
+    shadeName?: string;
+    nameFa?: string;
+    hexColor?: string;
+    confidence?: string;
+    colorDescription?: string;
+  } = {};
   try {
-    parsed = JSON.parse(text);
+    // Tolerate a ```json fence even with responseMimeType set — a fenced reply
+    // used to fail the whole scan.
+    parsed = JSON.parse(text.trim().replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/, ""));
   } catch {
     console.error("Failed to parse Gemini response:", text);
     return Response.json(
@@ -89,13 +105,24 @@ export async function POST(request: NextRequest) {
     );
   }
 
+  // The hex drives both the swatch and the on-device recolor maths, where a
+  // malformed value would silently produce NaN pixels.
+  const hexColor = /^#[0-9a-fA-F]{6}$/.test(parsed.hexColor ?? "")
+    ? parsed.hexColor!
+    : "#888888";
+  const shadeName = parsed.shadeName?.trim() || "Unknown shade";
+  const confidence = ["high", "medium", "low"].includes(parsed.confidence ?? "")
+    ? parsed.confidence!
+    : "low";
+
   const usage = data?.usageMetadata ?? {};
   return Response.json({
-    shadeCode: parsed.shadeCode ?? "?",
-    shadeName: parsed.shadeName ?? "Unknown",
-    hexColor: parsed.hexColor ?? "#888888",
-    colorDescription: parsed.colorDescription ?? `${parsed.shadeName} hair color`,
-    confidence: parsed.confidence ?? "low",
+    shadeCode: parsed.shadeCode?.trim() || "?",
+    shadeName,
+    nameFa: parsed.nameFa?.trim() || undefined,
+    hexColor,
+    colorDescription: parsed.colorDescription?.trim() || `${shadeName} hair color`,
+    confidence,
     usage: {
       inputTokens: usage.promptTokenCount ?? 0,
       outputTokens: usage.candidatesTokenCount ?? 0,

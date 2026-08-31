@@ -7,21 +7,50 @@ const ENDPOINT = `https://generativelanguage.googleapis.com/v1beta/models/${MODE
 const MAX_BYTES = 8 * 1024 * 1024; // 8 MB upload cap
 const ALLOWED_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
 
-function buildPrompt(shadeName: string, hex: string, description?: string, hairType?: string): string {
+// Only these reach the prompt — hairType arrives as client form data and is
+// interpolated into the instruction, so it is matched against a known set
+// rather than passed through.
+const HAIR_TYPES = new Set(["straight", "wavy", "curly", "coily"]);
+
+function buildPrompt(
+  shadeName: string,
+  hex: string,
+  description?: string,
+  hairType?: string,
+  includeEyebrows?: boolean,
+): string {
   const colorName = description ? `${shadeName} (${description})` : shadeName;
   const hairTypeClause = hairType
     ? `The person's hair is naturally ${hairType} — preserve this exact ${hairType} texture and pattern completely.`
     : "";
+  // Eyebrows are deliberately explicit in BOTH directions. Left unstated, the
+  // model decides for itself and the result varies between runs.
+  const eyebrowClause = includeEyebrows
+    ? [
+        "Also recolor the eyebrows to match the new hair colour, in the same tone and depth,",
+        "keeping their exact original shape, thickness, arch, and every individual brow hair in place.",
+        "The eyebrows must still read as natural brows, not as painted or drawn-on shapes.",
+      ].join(" ")
+    : "Leave the eyebrows completely untouched — keep their original colour exactly as it is in the photograph.";
+
   return [
-    `Using the provided photograph, change only the hair color to ${colorName}, approximately hex ${hex}.`,
-    "Recolor the existing hair only. Do NOT restyle, reshape, regenerate, lengthen, shorten, or move the hair.",
+    `Using the provided photograph, recolor the hair to ${colorName}, approximately hex ${hex}.`,
+    "Recolor the existing hair strands in place, keeping the same hairstyle, haircut, length,",
+    "outline and silhouette, parting, texture, curl and wave pattern, volume, and the position of",
+    "every individual strand exactly as they are in the original photograph.",
     hairTypeClause,
-    "Preserve the exact same hairstyle, haircut, hair length, outline/silhouette, parting, texture,",
-    "curl and wave pattern, volume, and the position of every individual strand, completely unchanged.",
-    "Keep the face, facial features, expression, skin, pose, clothing, background, and lighting identical.",
-    "The output must be the same photograph with nothing altered except the colour of the hair,",
-    "and it must look like a natural, unedited photograph.",
-  ].filter(Boolean).join(" ");
+    eyebrowClause,
+    // Must carve out the eyebrows when they are being recoloured, or this
+    // sentence contradicts the instruction directly above it.
+    includeEyebrows
+      ? "Apart from the eyebrow colour, keep the face, facial features, expression, skin tone, pose, clothing, background, and lighting identical."
+      : "Keep the face, facial features, expression, skin tone, pose, clothing, background, and lighting identical.",
+    "Preserve the natural shading of the hair: keep the original highlights, shadows, shine and depth,",
+    "recoloured into the new shade rather than flattened into one solid colour.",
+    "The result must look like an ordinary unedited photograph of this person with this hair colour.",
+  ]
+    .filter(Boolean)
+    .join(" ");
 }
 
 export async function POST(request: NextRequest) {
@@ -44,7 +73,9 @@ export async function POST(request: NextRequest) {
   const shadeName = String(form.get("shadeName") ?? "").trim();
   const hex = String(form.get("hex") ?? "").trim();
   const description = String(form.get("description") ?? "").trim() || undefined;
-  const hairType = String(form.get("hairType") ?? "").trim() || undefined;
+  const rawHairType = String(form.get("hairType") ?? "").trim().toLowerCase();
+  const hairType = HAIR_TYPES.has(rawHairType) ? rawHairType : undefined;
+  const includeEyebrows = String(form.get("eyebrows") ?? "") === "true";
 
   if (!(image instanceof File)) {
     return Response.json({ error: "هیچ تصویری ارسال نشد." }, { status: 400 });
@@ -66,7 +97,7 @@ export async function POST(request: NextRequest) {
       {
         role: "user",
         parts: [
-          { text: buildPrompt(shadeName, hex, description, hairType) },
+          { text: buildPrompt(shadeName, hex, description, hairType, includeEyebrows) },
           { inlineData: { mimeType: image.type, data: base64 } },
         ],
       },

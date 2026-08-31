@@ -6,9 +6,11 @@ import { computeCost, formatCost } from "@/lib/pricing";
 import { toFaDigits } from "@/lib/fa";
 import {
   BRAND_LABEL,
+  BRANDS,
   PRESET_SHADES,
   shadeLabel,
   type Brand,
+  type PresetShade,
   type ShadeInfo,
 } from "@/lib/shades";
 
@@ -222,38 +224,44 @@ export default function Home() {
             <div className="h-px flex-1 bg-[color:var(--line-divider)]" />
           </div>
 
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             <BrandTab active={brandFilter === null} onClick={() => setBrandFilter(null)}>
               همه
             </BrandTab>
-            <BrandTab active={brandFilter === "bianca"} onClick={() => setBrandFilter("bianca")}>
-              {BRAND_LABEL.bianca}
-            </BrandTab>
-            <BrandTab active={brandFilter === "oyster"} onClick={() => setBrandFilter("oyster")}>
-              {BRAND_LABEL.oyster}
-            </BrandTab>
+            {BRANDS.map((brand) => (
+              <BrandTab
+                key={brand}
+                active={brandFilter === brand}
+                onClick={() => setBrandFilter(brand)}
+              >
+                {BRAND_LABEL[brand]}
+              </BrandTab>
+            ))}
           </div>
 
-          <ShadeGroup
-            title="رنگ‌های تیره"
-            note="پردازش روی دستگاه — رایگان"
-            noteClass="text-emerald-300"
-            presets={visiblePresets.filter((s) => s.path === "local")}
-            onPick={(preset) => {
-              setShade(preset);
-              setStep("hair-photo");
-            }}
-          />
-          <ShadeGroup
-            title="رنگ‌های روشن"
-            note="پردازش با هوش مصنوعی"
-            noteClass="text-sky-300"
-            presets={visiblePresets.filter((s) => s.path === "ai")}
-            onPick={(preset) => {
-              setShade(preset);
-              setStep("hair-photo");
-            }}
-          />
+          <p className="flex items-center justify-center gap-3 text-[11px] text-ink-faint">
+            <span className="flex items-center gap-1.5">
+              <span className="h-2 w-2 rounded-full bg-emerald-400" />
+              پردازش روی دستگاه، رایگان
+            </span>
+            <span className="flex items-center gap-1.5">
+              <span className="h-2 w-2 rounded-full bg-sky-400" />
+              پردازش با هوش مصنوعی
+            </span>
+          </p>
+
+          {groupByFamily(visiblePresets).map((group) => (
+            <ShadeGroup
+              key={group.family}
+              title={group.family}
+              count={group.items.length}
+              presets={group.items}
+              onPick={(preset) => {
+                setShade(preset);
+                setStep("hair-photo");
+              }}
+            />
+          ))}
 
           <button
             onClick={reset}
@@ -464,37 +472,54 @@ function BrandTab({
   );
 }
 
+/** Presets arrive ordered by family, so a sequential pass is enough to group. */
+function groupByFamily(presets: PresetShade[]): Array<{ family: string; items: PresetShade[] }> {
+  const groups: Array<{ family: string; items: PresetShade[] }> = [];
+  for (const preset of presets) {
+    const last = groups[groups.length - 1];
+    if (last && last.family === preset.family) last.items.push(preset);
+    else groups.push({ family: preset.family, items: [preset] });
+  }
+  return groups;
+}
+
 function ShadeGroup({
   title,
-  note,
-  noteClass,
+  count,
   presets,
   onPick,
 }: {
   title: string;
-  note: string;
-  noteClass: string;
-  presets: Array<ShadeInfo & { shadeCode: string }>;
+  count: number;
+  presets: PresetShade[];
   onPick: (preset: ShadeInfo) => void;
 }) {
   if (presets.length === 0) return null;
   return (
     <div className="flex flex-col gap-2">
-      <p className="text-xs font-medium text-ink-sub">
-        {title} — <span className={noteClass}>{note}</span>
+      <p className="flex items-baseline gap-2 text-xs font-medium text-ink-sub">
+        <span>{title}</span>
+        <span className="text-[10px] text-ink-faint">{toFaDigits(count)} رنگ</span>
       </p>
       <div className="grid grid-cols-3 gap-2">
         {presets.map((preset) => (
           <button
             key={preset.shadeCode}
             onClick={() => onPick(preset)}
-            className="flex flex-col items-center gap-1.5 rounded-xl border border-[color:var(--line-panel)] p-3 text-center transition-colors hover:bg-[rgba(226,196,137,.1)]"
+            title={`${shadeLabel(preset)} — ${preset.shadeCode}`}
+            className="relative flex flex-col items-center gap-1.5 rounded-xl border border-[color:var(--line-panel)] p-3 text-center transition-colors hover:bg-[rgba(226,196,137,.1)]"
           >
+            <span
+              aria-hidden
+              className={`absolute top-2 left-2 h-2 w-2 rounded-full ${
+                preset.path === "local" ? "bg-emerald-400" : "bg-sky-400"
+              }`}
+            />
             <span
               className="h-10 w-10 rounded-full border-2 border-[color:var(--line-ring)]"
               style={{ backgroundColor: preset.hexColor }}
             />
-            <span className="text-[11px] font-medium leading-tight text-gold-title">
+            <span className="line-clamp-2 text-[11px] font-medium leading-tight text-gold-title">
               {shadeLabel(preset)}
             </span>
             <span className="text-[10px] text-ink-faint" dir="ltr">

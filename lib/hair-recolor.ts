@@ -115,7 +115,23 @@ export type RecolorResult = {
   hairPixelCount: number;   // 0 means no hair detected → fall back to Gemini
 };
 
-export async function recolorHair(file: File, targetHex: string): Promise<RecolorResult> {
+/**
+ * One photo, segmented once. Trying several shades on the same photo reuses
+ * this — segmentation is by far the expensive part, and the mask does not
+ * depend on the target color.
+ */
+export type PreparedHair = {
+  width: number;
+  height: number;
+  /** Per-pixel category mask at full image resolution. */
+  mask: Uint8Array;
+  /** Untouched RGBA of the source image; every recolor starts from this. */
+  basePixels: Uint8ClampedArray;
+  avgHairLightness: number;
+  hairPixelCount: number;
+};
+
+export async function prepareHair(file: File): Promise<PreparedHair> {
   const [segmenter, img] = await Promise.all([loadSegmenter(), loadImageEl(file)]);
 
   const W = img.naturalWidth;
@@ -137,17 +153,12 @@ export async function recolorHair(file: File, targetHex: string): Promise<Recolo
   if (!rawMask) throw new Error("Segmentation returned no mask.");
 
   const mask =
-    maskW === W && maskH === H
-      ? rawMask
-      : scaleMask(rawMask, maskW, maskH, W, H);
+    maskW === W && maskH === H ? rawMask : scaleMask(rawMask, maskW, maskH, W, H);
 
-  const imageData = ctx.getImageData(0, 0, W, H);
-  const px = imageData.data;
+  const px = ctx.getImageData(0, 0, W, H).data;
 
-  const [tR, tG, tB] = hexToRgb(targetHex);
-  const [tH, tS, tL] = rgbToHsl(tR, tG, tB);
-
-  // Pass 1 — measure average lightness of hair pixels for proportional shift
+  // Average lightness of hair pixels, for the proportional shift below and for
+  // needsGemini(). Measured once per photo.
   let lSum = 0;
   let hairCount = 0;
   for (let i = 0; i < mask.length; i++) {
@@ -156,10 +167,34 @@ export async function recolorHair(file: File, targetHex: string): Promise<Recolo
     lSum += l;
     hairCount++;
   }
-  const avgL = hairCount > 0 ? lSum / hairCount : 0.3;
-  const lDelta = tL - avgL;
 
-  // Pass 2 — recolor each hair pixel
+  return {
+    width: W,
+    height: H,
+    mask,
+    basePixels: px,
+    avgHairLightness: hairCount > 0 ? lSum / hairCount : 0.3,
+    hairPixelCount: hairCount,
+  };
+}
+
+/** Apply one target shade to an already-segmented photo. Cheap; safe to repeat. */
+export function recolorPrepared(prep: PreparedHair, targetHex: string): string {
+  const { width: W, height: H, mask, basePixels } = prep;
+
+  const canvas = document.createElement("canvas");
+  canvas.width = W;
+  canvas.height = H;
+  const ctx = canvas.getContext("2d", { willReadFrequently: true })!;
+
+  const imageData = ctx.createImageData(W, H);
+  const px = imageData.data;
+  px.set(basePixels);
+
+  const [tR, tG, tB] = hexToRgb(targetHex);
+  const [tH, tS, tL] = rgbToHsl(tR, tG, tB);
+  const lDelta = tL - prep.avgHairLightness;
+
   for (let i = 0; i < mask.length; i++) {
     if (mask[i] !== HAIR_IDX) continue;
     const pi = i * 4;
@@ -176,11 +211,15 @@ export async function recolorHair(file: File, targetHex: string): Promise<Recolo
   }
 
   ctx.putImageData(imageData, 0, 0);
+  return canvas.toDataURL("image/jpeg", 0.92);
+}
 
+export async function recolorHair(file: File, targetHex: string): Promise<RecolorResult> {
+  const prep = await prepareHair(file);
   return {
-    dataUrl: canvas.toDataURL("image/jpeg", 0.92),
-    avgHairLightness: avgL,
-    hairPixelCount: hairCount,
+    dataUrl: recolorPrepared(prep, targetHex),
+    avgHairLightness: prep.avgHairLightness,
+    hairPixelCount: prep.hairPixelCount,
   };
 }
 

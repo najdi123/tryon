@@ -1,9 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import Landing from "@/components/Landing";
+import Lightbox, { type LightboxItem } from "@/components/Lightbox";
 import { computeCost, formatCost } from "@/lib/pricing";
 import { toFaDigits } from "@/lib/fa";
+import type { PreparedHair } from "@/lib/hair-recolor";
 import {
   BRAND_LABEL,
   BRANDS,
@@ -20,6 +22,17 @@ type HairType = "straight" | "wavy" | "curly" | "coily";
 
 type CostEntry = { label: string; cents: number };
 
+type TryOnResult = {
+  shade: ShadeInfo;
+  /** null while this shade is still processing. */
+  image: string | null;
+  method: RecolorMethod | null;
+  error: string | null;
+};
+
+/** Each AI shade is a separate paid Gemini call, so the batch is kept small. */
+const MAX_SHADES = 5;
+
 const HAIR_TYPE_LABEL: Record<HairType, string> = {
   straight: "صاف",
   wavy: "موج‌دار",
@@ -30,16 +43,22 @@ const HAIR_TYPE_LABEL: Record<HairType, string> = {
 export default function Home() {
   const [step, setStep] = useState<Step>("landing");
   const [brandFilter, setBrandFilter] = useState<Brand | null>(null);
-  const [shade, setShade] = useState<ShadeInfo | null>(null);
+  const [selected, setSelected] = useState<ShadeInfo[]>([]);
+  const [scanned, setScanned] = useState<ShadeInfo | null>(null);
   const [boxPreview, setBoxPreview] = useState<string | null>(null);
   const [hairFile, setHairFile] = useState<File | null>(null);
   const [hairPreview, setHairPreview] = useState<string | null>(null);
-  const [result, setResult] = useState<string | null>(null);
-  const [recolorMethod, setRecolorMethod] = useState<RecolorMethod | null>(null);
+  const [results, setResults] = useState<TryOnResult[]>([]);
   const [hairType, setHairType] = useState<HairType | null>(null);
   const [loadingStatus, setLoadingStatus] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [note, setNote] = useState<string | null>(null);
   const [costs, setCosts] = useState<CostEntry[]>([]);
+  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
+
+  // Segmentation is the expensive step and does not depend on the target
+  // colour, so it is cached per photo and reused across shades and retries.
+  const prepared = useRef<{ file: File; prep: PreparedHair } | null>(null);
 
   function addCost(label: string, inputTokens: number, outputTokens: number) {
     const cents = computeCost("gemini-2.5-flash", inputTokens, outputTokens) * 100;
@@ -51,7 +70,38 @@ export default function Home() {
     setStep("shade");
   }
 
+  function toggleShade(shade: ShadeInfo) {
+    // Decided outside the updater — updaters must stay side-effect free.
+    const at = selected.findIndex((s) => s.shadeCode === shade.shadeCode);
+    if (at >= 0) {
+      setNote(null);
+      setSelected(selected.filter((_, i) => i !== at));
+      return;
+    }
+    if (selected.length >= MAX_SHADES) {
+      setNote(`حداکثر ${toFaDigits(MAX_SHADES)} رنگ را می‌توانید هم‌زمان امتحان کنید.`);
+      return;
+    }
+    setNote(null);
+    setSelected([...selected, shade]);
+  }
+
+  /** Scanned shades are added, never toggled off by a repeat scan. */
+  function addScannedShade(shade: ShadeInfo): boolean {
+    if (selected.some((s) => s.shadeCode === shade.shadeCode)) return true;
+    if (selected.length >= MAX_SHADES) {
+      setError(
+        `حداکثر ${toFaDigits(MAX_SHADES)} رنگ را می‌توانید هم‌زمان امتحان کنید. یکی از رنگ‌ها را حذف کنید.`,
+      );
+      return false;
+    }
+    setSelected([...selected, shade]);
+    return true;
+  }
+
   function pickHairPhoto(file: File) {
+    prepared.current = null;
+    setResults([]);
     setHairFile(file);
     setHairPreview(URL.createObjectURL(file));
   }
@@ -65,7 +115,7 @@ export default function Home() {
       const res = await fetch("/api/read-box", { method: "POST", body: form });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "خواندن جعبه ناموفق بود.");
-      setShade({
+      setScanned({
         shadeCode: data.shadeCode,
         shadeName: data.shadeName,
         hexColor: data.hexColor,
@@ -82,8 +132,10 @@ export default function Home() {
     }
   }
 
-  async function tryOnWithGemini(file: File, info: ShadeInfo): Promise<void> {
-    setLoadingStatus("در حال اعمال رنگ با هوش مصنوعی…");
+  async function applyWithGemini(
+    file: File,
+    info: ShadeInfo,
+  ): Promise<{ image: string; method: RecolorMethod }> {
     const form = new FormData();
     form.append("image", file);
     form.append("shadeName", info.shadeName);
@@ -94,68 +146,89 @@ export default function Home() {
     const res = await fetch("/api/tryon", { method: "POST", body: form });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error ?? "اعمال رنگ با هوش مصنوعی ناموفق بود.");
-    setResult(data.image);
-    if (data.usage) addCost("اعمال رنگ (هوش مصنوعی)", data.usage.inputTokens, data.usage.outputTokens);
-    setRecolorMethod("ai");
+    if (data.usage) {
+      addCost(`اعمال رنگ ${shadeLabel(info)}`, data.usage.inputTokens, data.usage.outputTokens);
+    }
+    return { image: data.image, method: "ai" };
   }
 
-  async function tryOn() {
-    if (!hairFile || !shade) return;
-    setLoadingStatus("در حال جداسازی مو…");
+  async function runTryOn() {
+    if (!hairFile || selected.length === 0) return;
     setError(null);
-    setResult(null);
-    setRecolorMethod(null);
+    setResults(
+      selected.map((shade) => ({ shade, image: null, method: null, error: null })),
+    );
+    setStep("result");
 
-    try {
-      // Attempt local recolor via MediaPipe hair segmentation
-      let usedLocal = false;
+    // Segment once for the whole batch.
+    let prep: PreparedHair | null = null;
+    if (prepared.current?.file === hairFile) {
+      prep = prepared.current.prep;
+    } else {
+      setLoadingStatus("در حال جداسازی مو (اجرای اول ممکن است چند ثانیه طول بکشد)…");
       try {
-        setLoadingStatus("در حال بارگذاری موتور جداسازی مو (اجرای اول ممکن است چند ثانیه طول بکشد)…");
-        const { recolorHair, needsGemini } = await import("@/lib/hair-recolor");
-
-        setLoadingStatus("در حال جداسازی مو…");
-        const local = await recolorHair(hairFile, shade.hexColor);
-
-        const tooFewHairPixels = local.hairPixelCount < 500;
-        const requiresBleaching = needsGemini(local.avgHairLightness, shade.hexColor);
-
-        if (!tooFewHairPixels && !requiresBleaching) {
-          setResult(local.dataUrl);
-          setRecolorMethod("local");
-          usedLocal = true;
-        } else if (requiresBleaching) {
-          // Show local result briefly while AI runs, or just run AI
-          setLoadingStatus("رنگ انتخابی روشن‌تر است — برای شبیه‌سازی دقیق‌تر از هوش مصنوعی استفاده می‌شود…");
-        }
-      } catch (localErr) {
-        console.warn("Local recolor failed, falling back to AI:", localErr);
-        setLoadingStatus("در حال استفاده از هوش مصنوعی…");
+        const { prepareHair } = await import("@/lib/hair-recolor");
+        prep = await prepareHair(hairFile);
+        prepared.current = { file: hairFile, prep };
+      } catch (segErr) {
+        // Not fatal — every shade just goes through Gemini instead.
+        console.warn("Hair segmentation failed, using AI for all shades:", segErr);
       }
-
-      if (!usedLocal) {
-        await tryOnWithGemini(hairFile, shade);
-      }
-
-      setStep("result");
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "مشکلی پیش آمد.");
-    } finally {
-      setLoadingStatus(null);
     }
+
+    const { needsGemini, recolorPrepared } = await import("@/lib/hair-recolor");
+
+    for (let i = 0; i < selected.length; i++) {
+      const shade = selected[i];
+      setLoadingStatus(
+        `در حال پردازش رنگ ${toFaDigits(i + 1)} از ${toFaDigits(selected.length)} — ${shadeLabel(shade)}`,
+      );
+      try {
+        let outcome: { image: string; method: RecolorMethod };
+        const canDoLocally =
+          prep !== null &&
+          prep.hairPixelCount >= 500 &&
+          !needsGemini(prep.avgHairLightness, shade.hexColor);
+
+        if (canDoLocally) {
+          outcome = { image: recolorPrepared(prep!, shade.hexColor), method: "local" };
+        } else {
+          outcome = await applyWithGemini(hairFile, shade);
+        }
+        setResults((prev) =>
+          prev.map((r, j) => (j === i ? { ...r, image: outcome.image, method: outcome.method } : r)),
+        );
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : "پردازش این رنگ ناموفق بود.";
+        setResults((prev) => prev.map((r, j) => (j === i ? { ...r, error: msg } : r)));
+      }
+    }
+
+    setLoadingStatus(null);
+  }
+
+  /** Keeps the photo (and its segmentation) — just pick different shades. */
+  function tryOtherColors() {
+    setSelected([]);
+    setResults([]);
+    setNote(null);
+    setStep("shade");
   }
 
   function reset() {
     setStep("landing");
     setBrandFilter(null);
-    setShade(null);
+    setSelected([]);
+    setScanned(null);
     setBoxPreview(null);
     setHairFile(null);
     setHairPreview(null);
-    setResult(null);
-    setRecolorMethod(null);
+    setResults([]);
     setHairType(null);
     setCosts([]);
     setError(null);
+    setNote(null);
+    prepared.current = null;
   }
 
   const totalCents = costs.reduce((sum, c) => sum + c.cents, 0);
@@ -165,6 +238,30 @@ export default function Home() {
   const visiblePresets = brandFilter
     ? PRESET_SHADES.filter((s) => s.brand === brandFilter)
     : PRESET_SHADES;
+
+  const isSelected = (code: string) => selected.some((s) => s.shadeCode === code);
+
+  // The original photo leads the lightbox so before/after can be paged through.
+  const lightboxItems: LightboxItem[] = [
+    ...(hairPreview
+      ? [{ src: hairPreview, title: "عکس اصلی", fileKey: "original" }]
+      : []),
+    ...results
+      .filter((r) => r.image)
+      .map((r) => ({
+        src: r.image!,
+        title: shadeLabel(r.shade),
+        caption: r.shade.shadeCode,
+        fileKey: r.shade.shadeCode,
+      })),
+  ];
+
+  function openLightbox(src: string) {
+    const at = lightboxItems.findIndex((it) => it.src === src);
+    if (at >= 0) setLightboxIndex(at);
+  }
+
+  const doneCount = results.filter((r) => r.image || r.error).length;
 
   return (
     <main className="stage mx-auto flex w-full max-w-md flex-1 flex-col gap-6 px-5 py-8">
@@ -189,8 +286,6 @@ export default function Home() {
         </p>
       )}
 
-      {costs.length > 0 && <CostMeter costs={costs} totalCents={totalCents} />}
-
       {step === "shade" && (
         <section className="flex flex-col gap-5">
           <div className="flex flex-col gap-1 text-center">
@@ -208,19 +303,16 @@ export default function Home() {
               capture="environment"
               onFile={readBox}
             />
-            <PickerTile
-              icon="🖼️"
-              title="انتخاب تصویر"
-              hint="از گالری"
-              onFile={readBox}
-            />
+            <PickerTile icon="🖼️" title="انتخاب تصویر" hint="از گالری" onFile={readBox} />
           </div>
 
           {loadingStatus && <p className="text-center text-sm text-ink-sub">{loadingStatus}</p>}
 
           <div className="flex items-center gap-3">
             <div className="h-px flex-1 bg-[color:var(--line-divider)]" />
-            <span className="text-xs text-ink-faint">یا یکی از رنگ‌های آماده رو انتخاب کن</span>
+            <span className="text-xs text-ink-faint">
+              یا تا {toFaDigits(MAX_SHADES)} رنگ انتخاب کن
+            </span>
             <div className="h-px flex-1 bg-[color:var(--line-divider)]" />
           </div>
 
@@ -256,12 +348,42 @@ export default function Home() {
               title={group.family}
               count={group.items.length}
               presets={group.items}
-              onPick={(preset) => {
-                setShade(preset);
-                setStep("hair-photo");
-              }}
+              isSelected={isSelected}
+              selectionIndex={(code) => selected.findIndex((s) => s.shadeCode === code)}
+              onToggle={toggleShade}
             />
           ))}
+
+          {/* Selection bar rides the bottom of the viewport while scrolling the chart. */}
+          <div className="sticky bottom-0 -mx-5 mt-1 flex flex-col gap-2 bg-[rgba(10,8,6,.94)] px-5 pb-4 pt-3 backdrop-blur-sm">
+            {note && <p className="text-center text-[11px] text-amber-300">{note}</p>}
+            <div className="flex items-center gap-3">
+              <div className="flex flex-1 items-center gap-1.5">
+                {selected.length === 0 ? (
+                  <span className="text-xs text-ink-faint">هنوز رنگی انتخاب نشده</span>
+                ) : (
+                  selected.map((s) => (
+                    <button
+                      key={s.shadeCode}
+                      onClick={() => toggleShade(s)}
+                      title={`حذف ${shadeLabel(s)}`}
+                      aria-label={`حذف ${shadeLabel(s)}`}
+                      className="h-7 w-7 rounded-full border-2 border-[color:var(--line-ring)] transition-transform hover:scale-110"
+                      style={{ backgroundColor: s.hexColor }}
+                    />
+                  ))
+                )}
+              </div>
+              <button
+                onClick={() => setStep("hair-photo")}
+                disabled={selected.length === 0}
+                className="cta rounded-full px-6 py-3 text-sm font-semibold"
+              >
+                ادامه
+                {selected.length > 0 && ` (${toFaDigits(selected.length)})`}
+              </button>
+            </div>
+          </div>
 
           <button
             onClick={reset}
@@ -272,50 +394,69 @@ export default function Home() {
         </section>
       )}
 
-      {step === "shade-review" && shade && (
+      {step === "shade-review" && scanned && (
         <section className="flex flex-col gap-5">
           {boxPreview && (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={boxPreview} alt="جعبه محصول" className="max-h-48 self-center rounded-xl object-contain" />
+            <img
+              src={boxPreview}
+              alt="جعبه محصول"
+              className="max-h-48 self-center rounded-xl object-contain"
+            />
           )}
 
           <div className="panel rounded-2xl p-4">
             <div className="mb-3 flex items-center gap-3">
               <span
                 className="h-12 w-12 flex-shrink-0 rounded-full border-2 border-[color:var(--line-ring)]"
-                style={{ backgroundColor: shade.hexColor }}
+                style={{ backgroundColor: scanned.hexColor }}
               />
               <div className="min-w-0 flex-1">
-                <p className="truncate font-semibold text-gold-title">{shadeLabel(shade)}</p>
+                <p className="truncate font-semibold text-gold-title">{shadeLabel(scanned)}</p>
                 <p className="text-sm text-ink-body" dir="ltr">
-                  {shade.shadeCode}
+                  {scanned.shadeCode}
                 </p>
               </div>
-              <ConfidenceBadge confidence={shade.confidence} />
+              <ConfidenceBadge confidence={scanned.confidence} />
             </div>
-            {shade.colorDescription && (
+            {scanned.colorDescription && (
               <p className="text-xs leading-relaxed text-ink-muted" dir="ltr">
-                {shade.colorDescription}
+                {scanned.colorDescription}
               </p>
             )}
           </div>
 
           <div className="flex gap-3">
             <SecondaryButton onClick={() => setStep("shade")}>اسکن دوباره</SecondaryButton>
-            <button onClick={() => setStep("hair-photo")} className="cta flex-1 rounded-full px-4 py-3 text-sm font-semibold">
+            <button
+              onClick={() => {
+                if (addScannedShade(scanned)) setStep("hair-photo");
+              }}
+              className="cta flex-1 rounded-full px-4 py-3 text-sm font-semibold"
+            >
               همین رنگ رو می‌خوام
             </button>
           </div>
         </section>
       )}
 
-      {step === "hair-photo" && shade && (
+      {step === "hair-photo" && selected.length > 0 && (
         <section className="flex flex-col gap-5">
-          <div className="flex flex-col gap-1 text-center">
+          <div className="flex flex-col items-center gap-2 text-center">
             <p className="text-base font-semibold text-gold-title">عکس خودت رو انتخاب کن</p>
-            <p className="text-xs text-ink-body">
-              رنگ انتخابی: {shadeLabel(shade)} <span dir="ltr">({shade.shadeCode})</span>
-            </p>
+            <div className="flex items-center gap-1.5">
+              {selected.map((s) => (
+                <span
+                  key={s.shadeCode}
+                  title={`${shadeLabel(s)} (${s.shadeCode})`}
+                  className="h-6 w-6 rounded-full border-2 border-[color:var(--line-ring)]"
+                  style={{ backgroundColor: s.hexColor }}
+                />
+              ))}
+              <span className="mr-1 text-xs text-ink-body">
+                {toFaDigits(selected.length)} رنگ انتخاب شده
+              </span>
+            </div>
           </div>
 
           {hairPreview ? (
@@ -369,18 +510,14 @@ export default function Home() {
             </div>
           )}
 
-          {loadingStatus && <p className="text-center text-sm text-ink-sub">{loadingStatus}</p>}
-
           <div className="flex gap-3">
-            <SecondaryButton onClick={() => setStep("shade")} disabled={!!loadingStatus}>
-              بازگشت
-            </SecondaryButton>
+            <SecondaryButton onClick={() => setStep("shade")}>تغییر رنگ‌ها</SecondaryButton>
             <button
-              onClick={tryOn}
-              disabled={!hairFile || !!loadingStatus}
+              onClick={runTryOn}
+              disabled={!hairFile}
               className="cta flex-1 rounded-full px-4 py-3 text-sm font-semibold"
             >
-              {loadingStatus ? "در حال پردازش…" : "اعمال رنگ"}
+              اعمال {toFaDigits(selected.length)} رنگ
             </button>
           </div>
 
@@ -390,40 +527,135 @@ export default function Home() {
         </section>
       )}
 
-      {step === "result" && shade && (
+      {step === "result" && results.length > 0 && (
         <section className="flex flex-col gap-5">
-          <div className="grid grid-cols-2 gap-3">
-            <Figure label="قبل" src={hairPreview} />
-            <Figure label="بعد" src={result} />
+          {loadingStatus && (
+            <div className="flex flex-col gap-2">
+              <p className="text-center text-sm text-ink-sub">{loadingStatus}</p>
+              <div className="h-1 overflow-hidden rounded-full bg-[rgba(226,196,137,.14)]">
+                <div
+                  className="h-full rounded-full bg-gold-icon transition-all duration-500"
+                  style={{ width: `${(doneCount / results.length) * 100}%` }}
+                />
+              </div>
+            </div>
+          )}
+
+          {hairPreview && (
+            <figure className="flex flex-col items-center gap-1">
+              <figcaption className="text-xs text-ink-sub">عکس اصلی</figcaption>
+              <button type="button" onClick={() => openLightbox(hairPreview)}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={hairPreview}
+                  alt="عکس اصلی"
+                  className="h-28 w-28 rounded-xl object-cover"
+                />
+              </button>
+            </figure>
+          )}
+
+          <div className={`grid gap-3 ${results.length === 1 ? "grid-cols-1" : "grid-cols-2"}`}>
+            {results.map((r) => (
+              <ResultCard key={r.shade.shadeCode} result={r} onOpen={openLightbox} />
+            ))}
           </div>
 
-          <div className="flex flex-col gap-1 text-center">
-            {recolorMethod === "local" && (
-              <p className="text-xs font-medium text-emerald-300">
-                ✓ پردازش روی دستگاه — حالت مو کاملاً حفظ شده و بدون هزینه
-              </p>
-            )}
-            {recolorMethod === "ai" && (
-              <p className="text-xs text-ink-faint">پردازش با هوش مصنوعی</p>
-            )}
-            <p className="text-xs text-ink-muted">
-              پیش‌نمایش رنگ {shadeLabel(shade)}. نتیجه بسته به رنگ اولیه موی شما متفاوت است.
-            </p>
-          </div>
+          <p className="text-center text-xs text-ink-muted">
+            نتیجه بسته به رنگ اولیه موی شما متفاوت است. برای بزرگ‌نمایی، ذخیره یا اشتراک‌گذاری روی
+            هر تصویر بزنید.
+          </p>
 
-          <div className="flex gap-3">
-            <SecondaryButton onClick={() => setStep("hair-photo")}>عکس دیگر</SecondaryButton>
-            <button onClick={() => setStep("shade")} className="cta flex-1 rounded-full px-4 py-3 text-sm font-semibold">
-              رنگ دیگر
+          <div className="flex flex-col gap-3">
+            <button
+              onClick={tryOtherColors}
+              disabled={!!loadingStatus}
+              className="cta rounded-full px-4 py-3.5 text-sm font-semibold"
+            >
+              امتحان رنگ‌های دیگر با همین عکس
             </button>
+            <div className="flex gap-3">
+              <SecondaryButton onClick={() => setStep("hair-photo")} disabled={!!loadingStatus}>
+                عکس دیگر
+              </SecondaryButton>
+              <SecondaryButton onClick={reset} disabled={!!loadingStatus}>
+                شروع دوباره
+              </SecondaryButton>
+            </div>
           </div>
-
-          <button onClick={reset} className="self-center text-xs text-ink-faint underline-offset-4 hover:underline">
-            شروع دوباره
-          </button>
         </section>
       )}
+
+      {costs.length > 0 && (
+        <p className="mt-auto pt-6 text-center text-[10px] text-ink-footer opacity-50">
+          هزینه این جلسه{" "}
+          <span dir="ltr" className="font-mono">
+            {formatCost(totalCents)}
+          </span>
+        </p>
+      )}
+
+      {lightboxIndex !== null && lightboxItems[lightboxIndex] && (
+        <Lightbox
+          items={lightboxItems}
+          index={lightboxIndex}
+          onIndexChange={setLightboxIndex}
+          onClose={() => setLightboxIndex(null)}
+        />
+      )}
     </main>
+  );
+}
+
+function ResultCard({
+  result,
+  onOpen,
+}: {
+  result: TryOnResult;
+  onOpen: (src: string) => void;
+}) {
+  return (
+    <figure className="flex flex-col gap-1.5">
+      {result.image ? (
+        <button
+          type="button"
+          onClick={() => onOpen(result.image!)}
+          className="group relative overflow-hidden rounded-xl"
+          aria-label={`بزرگ‌نمایی ${shadeLabel(result.shade)}`}
+        >
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={result.image}
+            alt={shadeLabel(result.shade)}
+            className="aspect-square w-full object-cover"
+          />
+          <span className="absolute bottom-1.5 left-1.5 rounded-full bg-[rgba(10,8,6,.7)] p-1.5 text-gold-outline opacity-0 transition-opacity group-hover:opacity-100">
+            <ExpandIcon />
+          </span>
+        </button>
+      ) : result.error ? (
+        <div className="flex aspect-square w-full items-center justify-center rounded-xl border border-red-500/25 bg-red-950/25 p-3 text-center text-[11px] text-red-200">
+          {result.error}
+        </div>
+      ) : (
+        <div className="flex aspect-square w-full items-center justify-center rounded-xl bg-[rgba(26,20,13,.7)]">
+          <span className="h-6 w-6 animate-spin rounded-full border-2 border-[rgba(226,196,137,.25)] border-t-gold-icon" />
+        </div>
+      )}
+      <figcaption className="flex items-center justify-center gap-1.5 text-center">
+        <span
+          aria-hidden
+          className="h-2.5 w-2.5 flex-none rounded-full border border-[color:var(--line-ring)]"
+          style={{ backgroundColor: result.shade.hexColor }}
+        />
+        <span className="truncate text-[11px] font-medium text-gold-title">
+          {shadeLabel(result.shade)}
+        </span>
+        <span className="text-[10px] text-ink-faint" dir="ltr">
+          {result.shade.shadeCode}
+        </span>
+      </figcaption>
+    </figure>
   );
 }
 
@@ -487,12 +719,16 @@ function ShadeGroup({
   title,
   count,
   presets,
-  onPick,
+  isSelected,
+  selectionIndex,
+  onToggle,
 }: {
   title: string;
   count: number;
   presets: PresetShade[];
-  onPick: (preset: ShadeInfo) => void;
+  isSelected: (code: string) => boolean;
+  selectionIndex: (code: string) => number;
+  onToggle: (preset: PresetShade) => void;
 }) {
   if (presets.length === 0) return null;
   return (
@@ -502,31 +738,45 @@ function ShadeGroup({
         <span className="text-[10px] text-ink-faint">{toFaDigits(count)} رنگ</span>
       </p>
       <div className="grid grid-cols-3 gap-2">
-        {presets.map((preset) => (
-          <button
-            key={preset.shadeCode}
-            onClick={() => onPick(preset)}
-            title={`${shadeLabel(preset)} — ${preset.shadeCode}`}
-            className="relative flex flex-col items-center gap-1.5 rounded-xl border border-[color:var(--line-panel)] p-3 text-center transition-colors hover:bg-[rgba(226,196,137,.1)]"
-          >
-            <span
-              aria-hidden
-              className={`absolute top-2 left-2 h-2 w-2 rounded-full ${
-                preset.path === "local" ? "bg-emerald-400" : "bg-sky-400"
+        {presets.map((preset) => {
+          const on = isSelected(preset.shadeCode);
+          const order = selectionIndex(preset.shadeCode);
+          return (
+            <button
+              key={preset.shadeCode}
+              onClick={() => onToggle(preset)}
+              aria-pressed={on}
+              title={`${shadeLabel(preset)} — ${preset.shadeCode}`}
+              className={`relative flex flex-col items-center gap-1.5 rounded-xl border p-3 text-center transition-colors ${
+                on
+                  ? "border-gold-icon bg-[rgba(226,196,137,.14)]"
+                  : "border-[color:var(--line-panel)] hover:bg-[rgba(226,196,137,.1)]"
               }`}
-            />
-            <span
-              className="h-10 w-10 rounded-full border-2 border-[color:var(--line-ring)]"
-              style={{ backgroundColor: preset.hexColor }}
-            />
-            <span className="line-clamp-2 text-[11px] font-medium leading-tight text-gold-title">
-              {shadeLabel(preset)}
-            </span>
-            <span className="text-[10px] text-ink-faint" dir="ltr">
-              {preset.shadeCode}
-            </span>
-          </button>
-        ))}
+            >
+              <span
+                aria-hidden
+                className={`absolute top-2 left-2 h-2 w-2 rounded-full ${
+                  preset.path === "local" ? "bg-emerald-400" : "bg-sky-400"
+                }`}
+              />
+              {on && (
+                <span className="absolute top-1.5 right-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-gold-icon text-[10px] font-bold text-cta-ink">
+                  {toFaDigits(order + 1)}
+                </span>
+              )}
+              <span
+                className="h-10 w-10 rounded-full border-2 border-[color:var(--line-ring)]"
+                style={{ backgroundColor: preset.hexColor }}
+              />
+              <span className="line-clamp-2 text-[11px] font-medium leading-tight text-gold-title">
+                {shadeLabel(preset)}
+              </span>
+              <span className="text-[10px] text-ink-faint" dir="ltr">
+                {preset.shadeCode}
+              </span>
+            </button>
+          );
+        })}
       </div>
     </div>
   );
@@ -594,42 +844,20 @@ function ConfidenceBadge({ confidence }: { confidence: string }) {
   return <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${c.cls}`}>{c.label}</span>;
 }
 
-function Figure({ label, src }: { label: string; src: string | null }) {
+function ExpandIcon() {
   return (
-    <figure className="flex flex-col gap-1">
-      <figcaption className="text-center text-xs text-ink-sub">{label}</figcaption>
-      {src ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img src={src} alt={label} className="aspect-square w-full rounded-xl object-cover" />
-      ) : (
-        <div className="aspect-square w-full rounded-xl bg-[rgba(26,20,13,.7)]" />
-      )}
-    </figure>
-  );
-}
-
-function CostMeter({ costs, totalCents }: { costs: CostEntry[]; totalCents: number }) {
-  return (
-    <div className="rounded-xl border border-[color:var(--line-faint)] bg-[rgba(26,20,13,.7)] px-4 py-3">
-      <p className="mb-2 text-xs font-semibold text-ink-sub">هزینه سرویس (Gemini)</p>
-      <div className="space-y-1 text-xs text-ink-muted">
-        {costs.map((c, i) => (
-          <div key={i} className="flex justify-between">
-            <span>{c.label}</span>
-            <span className="font-mono" dir="ltr">
-              {formatCost(c.cents)}
-            </span>
-          </div>
-        ))}
-      </div>
-      <div className="mt-2 border-t border-[color:var(--line-divider)] pt-2">
-        <div className="flex justify-between text-xs font-semibold text-gold-title">
-          <span>مجموع این جلسه</span>
-          <span className="font-mono" dir="ltr">
-            {formatCost(totalCents)}
-          </span>
-        </div>
-      </div>
-    </div>
+    <svg
+      width="14"
+      height="14"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.6"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+    >
+      <path d="M4 9V4h5M20 15v5h-5M15 4h5v5M9 20H4v-5" />
+    </svg>
   );
 }

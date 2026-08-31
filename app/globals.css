@@ -1,26 +1,146 @@
 @import "tailwindcss";
 
+/* Bianca × Oyster — dark gold theme (see README handoff: Design Tokens). */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #0a0806;
+  --foreground: #f4ece0;
+
+  /* Stage */
+  --stage-warm: #241a12;
+  --stage-mid: #14100c;
+  --stage-base: #0a0806;
+
+  /* Gold ink */
+  --gold-title: #ecd9b0;
+  --gold-icon: #e0c48f;
+  --gold-icon-dim: #dcbf88;
+  --gold-outline: #e8d5ae;
+  --gold-bar: #cbb896;
+  --gold-amp: #8f7c5c;
+
+  /* Neutral ink */
+  --ink-headline: #f6efe3;
+  --ink-sub: #bcae98;
+  --ink-body: #a2957f;
+  /* Bumped from the comp's #948872 to clear WCAG AA at 12px (handoff a11y note). */
+  --ink-muted: #b3a68e;
+  --ink-faint: #8f8471;
+  --ink-footer: #6d6455;
+
+  /* Brand */
+  --cta-ink: #241a0e;
+  --oyster-ink: #f2e6d2;
+  --oyster-ink-dim: #e8e4dc;
+
+  /* Hairlines */
+  --line-ring: rgba(226, 196, 137, 0.3);
+  --line-panel: rgba(226, 196, 137, 0.22);
+  --line-faint: rgba(226, 196, 137, 0.16);
+  --line-divider: rgba(226, 196, 137, 0.14);
+  --line-neutral: rgba(226, 226, 226, 0.32);
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --color-gold-title: var(--gold-title);
+  --color-gold-icon: var(--gold-icon);
+  --color-gold-icon-dim: var(--gold-icon-dim);
+  --color-gold-outline: var(--gold-outline);
+  --color-gold-bar: var(--gold-bar);
+  --color-gold-amp: var(--gold-amp);
+
+  --color-ink-headline: var(--ink-headline);
+  --color-ink-sub: var(--ink-sub);
+  --color-ink-body: var(--ink-body);
+  --color-ink-muted: var(--ink-muted);
+  --color-ink-faint: var(--ink-faint);
+  --color-ink-footer: var(--ink-footer);
+
+  --color-cta-ink: var(--cta-ink);
+  --color-oyster-ink: var(--oyster-ink);
+  --color-oyster-ink-dim: var(--oyster-ink-dim);
+
+  --font-sans: var(--font-vazirmatn);
+  --font-display: var(--font-cormorant);
 }
 
 body {
-  background: var(--background);
+  background: var(--stage-base);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-vazirmatn), system-ui, sans-serif;
+}
+
+/* Dark stage used by the landing hero and the try-on flow. */
+.stage {
+  background: radial-gradient(
+    120% 90% at 50% 8%,
+    var(--stage-warm) 0%,
+    var(--stage-mid) 45%,
+    var(--stage-base) 100%
+  );
+}
+
+/* Gold gradient clipped to text — headline and the Latin brand lockup. */
+.gold-text {
+  background: linear-gradient(180deg, #fbeed2, #c9a05c);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.gold-text-logo {
+  background: linear-gradient(180deg, #f7e6c4, #c69f5f);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.panel {
+  border: 1px solid var(--line-panel);
+  background: linear-gradient(180deg, rgba(36, 27, 18, 0.72), rgba(16, 12, 9, 0.72));
+  backdrop-filter: blur(6px);
+}
+
+.cta {
+  color: var(--cta-ink);
+  background: linear-gradient(180deg, #f0d9a4, #c69a4f);
+  box-shadow:
+    0 18px 44px rgba(198, 154, 79, 0.34),
+    inset 0 1px 0 rgba(255, 255, 255, 0.45);
+  transition:
+    background 180ms ease,
+    box-shadow 180ms ease,
+    transform 180ms ease;
+}
+
+.cta:hover:not(:disabled) {
+  background: linear-gradient(180deg, #f8e6bd, #d3a95c);
+  box-shadow:
+    0 22px 52px rgba(198, 154, 79, 0.46),
+    inset 0 1px 0 rgba(255, 255, 255, 0.5);
+}
+
+.cta:active:not(:disabled) {
+  transform: translateY(1px);
+  box-shadow:
+    0 10px 26px rgba(198, 154, 79, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.4);
+}
+
+.cta:disabled {
+  opacity: 0.45;
+}
+
+:focus-visible {
+  outline: 2px solid #e0c48f;
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
 }

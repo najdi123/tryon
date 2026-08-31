@@ -28,7 +28,7 @@ export async function POST(request: NextRequest) {
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) {
     return Response.json(
-      { error: "Server is missing GEMINI_API_KEY. Add it to .env.local." },
+      { error: "کلید GEMINI_API_KEY روی سرور تنظیم نشده است." },
       { status: 500 },
     );
   }
@@ -37,7 +37,7 @@ export async function POST(request: NextRequest) {
   try {
     form = await request.formData();
   } catch {
-    return Response.json({ error: "Expected multipart form data." }, { status: 400 });
+    return Response.json({ error: "داده ارسالی باید از نوع multipart form باشد." }, { status: 400 });
   }
 
   const image = form.get("image");
@@ -47,16 +47,16 @@ export async function POST(request: NextRequest) {
   const hairType = String(form.get("hairType") ?? "").trim() || undefined;
 
   if (!(image instanceof File)) {
-    return Response.json({ error: "No image file provided." }, { status: 400 });
+    return Response.json({ error: "هیچ تصویری ارسال نشد." }, { status: 400 });
   }
   if (!ALLOWED_TYPES.has(image.type)) {
-    return Response.json({ error: "Image must be JPEG, PNG or WebP." }, { status: 400 });
+    return Response.json({ error: "تصویر باید JPEG، PNG یا WebP باشد." }, { status: 400 });
   }
   if (image.size > MAX_BYTES) {
-    return Response.json({ error: "Image is larger than 8 MB." }, { status: 400 });
+    return Response.json({ error: "حجم تصویر بیشتر از ۸ مگابایت است." }, { status: 400 });
   }
   if (!shadeName || !hex) {
-    return Response.json({ error: "Missing target color." }, { status: 400 });
+    return Response.json({ error: "رنگ مقصد مشخص نشده است." }, { status: 400 });
   }
 
   const base64 = Buffer.from(await image.arrayBuffer()).toString("base64");
@@ -83,14 +83,14 @@ export async function POST(request: NextRequest) {
       body: JSON.stringify(body),
     });
   } catch {
-    return Response.json({ error: "Could not reach the image service." }, { status: 502 });
+    return Response.json({ error: "ارتباط با سرویس تصویر برقرار نشد." }, { status: 502 });
   }
 
   if (!upstream.ok) {
     const text = await upstream.text();
     console.error("Gemini error", upstream.status, text);
     return Response.json(
-      { error: "The image service rejected the request.", status: upstream.status },
+      { error: "سرویس تصویر درخواست را نپذیرفت.", status: upstream.status },
       { status: 502 },
     );
   }
@@ -104,7 +104,7 @@ export async function POST(request: NextRequest) {
     // Common cause: the model refused or returned only text (e.g. safety block).
     console.error("No image in Gemini response", JSON.stringify(data).slice(0, 500));
     return Response.json(
-      { error: "No image was generated. Try a clearer, front-facing photo." },
+      { error: "تصویری ساخته نشد. لطفاً عکس واضح‌تر و روبه‌رو بگیرید." },
       { status: 422 },
     );
   }

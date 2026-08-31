@@ -26,22 +26,22 @@ If you cannot extract something with high confidence, use your best estimate and
 export async function POST(request: NextRequest) {
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) {
-    return Response.json({ error: "Missing GEMINI_API_KEY" }, { status: 500 });
+    return Response.json({ error: "کلید GEMINI_API_KEY تنظیم نشده است." }, { status: 500 });
   }
 
   let form: FormData;
   try {
     form = await request.formData();
   } catch {
-    return Response.json({ error: "Expected multipart form data." }, { status: 400 });
+    return Response.json({ error: "داده ارسالی باید از نوع multipart form باشد." }, { status: 400 });
   }
 
   const image = form.get("image");
   if (!(image instanceof File)) {
-    return Response.json({ error: "No image file provided." }, { status: 400 });
+    return Response.json({ error: "هیچ تصویری ارسال نشد." }, { status: 400 });
   }
   if (!["image/jpeg", "image/png", "image/webp"].includes(image.type)) {
-    return Response.json({ error: "Image must be JPEG, PNG, or WebP." }, { status: 400 });
+    return Response.json({ error: "تصویر باید JPEG، PNG یا WebP باشد." }, { status: 400 });
   }
 
   const base64 = Buffer.from(await image.arrayBuffer()).toString("base64");
@@ -66,13 +66,13 @@ export async function POST(request: NextRequest) {
       body: JSON.stringify(body),
     });
   } catch {
-    return Response.json({ error: "Could not reach Gemini." }, { status: 502 });
+    return Response.json({ error: "ارتباط با سرویس برقرار نشد." }, { status: 502 });
   }
 
   if (!upstream.ok) {
     const text = await upstream.text();
     console.error("Gemini error", upstream.status, text);
-    return Response.json({ error: "Gemini rejected the request." }, { status: 502 });
+    return Response.json({ error: "سرویس درخواست را نپذیرفت." }, { status: 502 });
   }
 
   const data = await upstream.json();
@@ -84,7 +84,7 @@ export async function POST(request: NextRequest) {
   } catch {
     console.error("Failed to parse Gemini response:", text);
     return Response.json(
-      { error: "Could not parse color info from the image. Try a clearer box photo." },
+      { error: "اطلاعات رنگ از تصویر خوانده نشد. لطفاً عکس واضح‌تری از جعبه بگیرید." },
       { status: 422 },
     );
   }

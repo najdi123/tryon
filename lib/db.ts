@@ -9,4 +9,11 @@ export function makeClient(url = process.env.DATABASE_URL): PrismaClient {
   return new PrismaClient({ adapter: new PrismaPg({ connectionString: url }) });
 }
 
-export const db: PrismaClient = holder.ayenehPrisma ?? (holder.ayenehPrisma = makeClient());
+// Built on first use, not at import, so a build without DATABASE_URL does not fail.
+export const db: PrismaClient = new Proxy({} as PrismaClient, {
+  get(_t, prop) {
+    const client = holder.ayenehPrisma ?? (holder.ayenehPrisma = makeClient());
+    const v = Reflect.get(client, prop, client) as unknown;
+    return typeof v === "function" ? (v as (...a: unknown[]) => unknown).bind(client) : v;
+  },
+});

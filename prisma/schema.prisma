@@ -94,6 +94,8 @@ model QrToken {
   createdAt DateTime  @default(now())
   revokedAt DateTime?
   sessions  Session[]
+
+  @@index([galleryId])
 }
 
 // ─── Sessions and events ────────────────────────────────────────────────────
@@ -108,9 +110,11 @@ model Session {
   visitorId  String // anonymous browser id; an estimate of people, never a person
   origin     SessionOrigin
   galleryId  String?
-  gallery    Gallery?      @relation(fields: [galleryId], references: [id])
+  gallery    Gallery?      @relation(fields: [galleryId], references: [id], onDelete: Restrict)
   qrTokenId  String?
-  qrToken    QrToken?      @relation(fields: [qrTokenId], references: [id])
+  qrToken    QrToken?      @relation(fields: [qrTokenId], references: [id], onDelete: Restrict)
+  qrEnteredAt DateTime? // when the QR link was opened; copied forward to carried sessions
+  carried    Boolean       @default(false) // started after an idle gap, gallery kept from the earlier scan
   isTest     Boolean       @default(false) // staff traffic, left out of the main report
   isBot      Boolean       @default(false)
   startedAt  DateTime      @default(now())
@@ -121,6 +125,7 @@ model Session {
   @@index([startedAt])
   @@index([galleryId, startedAt])
   @@index([visitorId, lastSeenAt])
+  @@index([qrTokenId])
 }
 
 // Optional, kept apart from analytics and hidden in the panel by default.
@@ -154,17 +159,18 @@ model AnalyticsEvent {
   sessionId String
   session   Session      @relation(fields: [sessionId], references: [id], onDelete: Cascade)
   galleryId String?
-  gallery   Gallery?     @relation(fields: [galleryId], references: [id])
+  gallery   Gallery?     @relation(fields: [galleryId], references: [id], onDelete: Restrict)
   lineId    String?
-  line      ProductLine? @relation(fields: [lineId], references: [id])
+  line      ProductLine? @relation(fields: [lineId], references: [id], onDelete: Restrict)
   shadeId   String?
-  shade     Shade?       @relation(fields: [shadeId], references: [id])
+  shade     Shade?       @relation(fields: [shadeId], references: [id], onDelete: Restrict)
   status    String?
   createdAt DateTime     @default(now()) // server time
 
   @@index([type, createdAt])
   @@index([galleryId, type, createdAt])
   @@index([shadeId, type, createdAt])
+  @@index([lineId, type, createdAt])
   @@index([sessionId])
 }
 

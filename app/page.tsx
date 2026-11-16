@@ -3,6 +3,7 @@
 import { useRef, useState } from "react";
 import Landing from "@/components/Landing";
 import Lightbox, { type LightboxItem } from "@/components/Lightbox";
+import HairLock from "@/components/HairLock";
 import { computeCost, formatCost } from "@/lib/pricing";
 import { toFaDigits } from "@/lib/fa";
 import type { PreparedHair } from "@/lib/hair-recolor";
@@ -375,9 +376,10 @@ export default function Home() {
                       onClick={() => toggleShade(s)}
                       title={`حذف ${shadeLabel(s)}`}
                       aria-label={`حذف ${shadeLabel(s)}`}
-                      className="h-7 w-7 rounded-full border-2 border-[color:var(--line-ring)] transition-transform hover:scale-110"
-                      style={{ backgroundColor: s.hexColor }}
-                    />
+                      className="transition-transform hover:scale-110"
+                    >
+                      <HairLock hex={s.hexColor} size={24} seed={s.shadeCode} />
+                    </button>
                   ))
                 )}
               </div>
@@ -414,10 +416,7 @@ export default function Home() {
 
           <div className="panel rounded-2xl p-4">
             <div className="mb-3 flex items-center gap-3">
-              <span
-                className="h-12 w-12 flex-shrink-0 rounded-full border-2 border-[color:var(--line-ring)]"
-                style={{ backgroundColor: scanned.hexColor }}
-              />
+              <HairLock hex={scanned.hexColor} size={44} seed={scanned.shadeCode} />
               <div className="min-w-0 flex-1">
                 <p className="truncate font-semibold text-gold-title">{shadeLabel(scanned)}</p>
                 <p className="text-sm text-ink-body" dir="ltr">
@@ -453,11 +452,12 @@ export default function Home() {
             <p className="text-base font-semibold text-gold-title">عکس خودت رو انتخاب کن</p>
             <div className="flex items-center gap-1.5">
               {selected.map((s) => (
-                <span
+                <HairLock
                   key={s.shadeCode}
+                  hex={s.hexColor}
+                  size={22}
+                  seed={s.shadeCode}
                   title={`${shadeLabel(s)} (${s.shadeCode})`}
-                  className="h-6 w-6 rounded-full border-2 border-[color:var(--line-ring)]"
-                  style={{ backgroundColor: s.hexColor }}
                 />
               ))}
               <span className="mr-1 text-xs text-ink-body">
@@ -663,11 +663,7 @@ function ResultCard({
         </div>
       )}
       <figcaption className="flex items-center justify-center gap-1.5 text-center">
-        <span
-          aria-hidden
-          className="h-2.5 w-2.5 flex-none rounded-full border border-[color:var(--line-ring)]"
-          style={{ backgroundColor: result.shade.hexColor }}
-        />
+        <HairLock hex={result.shade.hexColor} size={12} seed={result.shade.shadeCode} strands={16} />
         <span className="truncate text-[11px] font-medium text-gold-title">
           {shadeLabel(result.shade)}
         </span>
@@ -784,10 +780,7 @@ function ShadeGroup({
                   {toFaDigits(order + 1)}
                 </span>
               )}
-              <span
-                className="h-10 w-10 rounded-full border-2 border-[color:var(--line-ring)]"
-                style={{ backgroundColor: preset.hexColor }}
-              />
+              <HairLock hex={preset.hexColor} size={44} seed={preset.shadeCode} />
               <span className="line-clamp-2 text-[11px] font-medium leading-tight text-gold-title">
                 {shadeLabel(preset)}
               </span>

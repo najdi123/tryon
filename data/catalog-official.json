@@ -1,0 +1,1949 @@
+{
+ "source": "Photographs of the three printed colour charts, 16 Nov 2026 (Downloads/ayeneh-rang-documents/colors)",
+ "notes": [
+  "faSource chart = Farsi name read off the chart; derived-check = Farsi rebuilt from the English line, check against the paper; translated-check = the Oyster charts have no Farsi, names are translations built from the code.",
+  "tryOn false = correctors, mixtones, lighteners and toners: mixing products, not a hair colour a customer tries.",
+  "No hex colours yet: they are sampled from the swatch photos in the build and corrected by eye.",
+  "The No Ammonia chart's 21 two-tube mix recipes (7/1, 9/1, 10/20 ...) are left out: they are formulas, not products."
+ ],
+ "lines": [
+  {
+   "key": "bianca",
+   "brand": "Bianca",
+   "nameFa": "بیانکا",
+   "nameEn": "BiancaColor",
+   "families": [
+    {
+     "key": "natural",
+     "nameFa": "طبیعی",
+     "nameEn": "Natural",
+     "tryOn": true,
+     "shades": [
+      {
+       "code": "1",
+       "nameFa": "مشکی",
+       "nameEn": "Black",
+       "faSource": "chart"
+      },
+      {
+       "code": "3",
+       "nameFa": "قهوه‌ای تیره",
+       "nameEn": "Dark Brown",
+       "faSource": "chart"
+      },
+      {
+       "code": "4",
+       "nameFa": "قهوه‌ای متوسط",
+       "nameEn": "Medium Brown",
+       "faSource": "chart"
+      },
+      {
+       "code": "5",
+       "nameFa": "قهوه‌ای روشن",
+       "nameEn": "Light Brown",
+       "faSource": "chart"
+      },
+      {
+       "code": "6",
+       "nameFa": "بلوند تیره",
+       "nameEn": "Dark Blonde",
+       "faSource": "chart"
+      },
+      {
+       "code": "7",
+       "nameFa": "بلوند متوسط",
+       "nameEn": "Medium Blonde",
+       "faSource": "chart"
+      },
+      {
+       "code": "8",
+       "nameFa": "بلوند روشن",
+       "nameEn": "Light Blonde",
+       "faSource": "chart"
+      },
+      {
+       "code": "9",
+       "nameFa": "بلوند خیلی روشن",
+       "nameEn": "Very Light Blonde",
+       "faSource": "chart"
+      },
+      {
+       "code": "10",
+       "nameFa": "بلوند فوق‌العاده روشن",
+       "nameEn": "Extra Light Blonde",
+       "faSource": "chart"
+      }
+     ]
+    },
+    {
+     "key": "intense-natural",
+     "nameFa": "طبیعی قوی",
+     "nameEn": "Intense Natural",
+     "tryOn": true,
+     "shades": [
+      {
+       "code": "5.00",
+       "nameFa": "قهوه‌ای روشن قوی",
+       "nameEn": "Intensive Light Brown",
+       "faSource": "chart"
+      },
+      {
+       "code": "6.00",
+       "nameFa": "بلوند تیره قوی",
+       "nameEn": "Intensive Dark Blonde",
+       "faSource": "chart"
+      },
+      {
+       "code": "7.00",
+       "nameFa": "بلوند روشن قوی",
+       "nameEn": "Intensive Light Blonde",
+       "faSource": "chart"
+      },
+      {
+       "code": "8.00",
+       "nameFa": "بلوند خیلی روشن قوی",
+       "nameEn": "Intensive Very Light Blonde",
+       "faSource": "chart"
+      },
+      {
+       "code": "9.00",
+       "nameFa": "بلوند فوق‌العاده روشن قوی",
+       "nameEn": "Intensive Extra Light Blonde",
+       "faSource": "chart"
+      }
+     ]
+    },
+    {
+     "key": "smoky",
+     "nameFa": "دودی",
+     "nameEn": "Smoky",
+     "tryOn": true,
+     "shades": [
+      {
+       "code": "4.2",
+       "nameFa": "قهوه‌ای دودی",
+       "nameEn": "Smoky Brown",
+       "faSource": "chart"
+      },
+      {
+       "code": "5.2",
+       "nameFa": "قهوه‌ای دودی روشن",
+       "nameEn": "Light Smoky Brown",
+       "faSource": "chart"
+      },
+      {
+       "code": "6.2",
+       "nameFa": "بلوند دودی تیره",
+       "nameEn": "Dark Smoky Blonde",
+       "faSource": "chart"
+      },
+      {
+       "code": "7.2",
+       "nameFa": "بلوند دودی متوسط",
+       "nameEn": "Medium Smoky Blonde",
+       "faSource": "chart"
+      },
+      {
+       "code": "8.2",
+       "nameFa": "بلوند دودی روشن",
+       "nameEn": "Light Smoky Blonde",
+       "faSource": "chart"
+      },
+      {
+       "code": "9.2",
+       "nameFa": "بلوند دودی خیلی روشن",
+       "nameEn": "Very Light Smoky Blonde",
+       "faSource": "chart"
+      },
+      {
+       "code": "10.2",
+       "nameFa": "بلوند دودی فوق‌العاده روشن",
+       "nameEn": "Extra Light Smoky Blonde",
+       "faSource": "chart"
+      }
+     ]
+    },
+    {
+     "key": "ash",
+     "nameFa": "خاکستری",
+     "nameEn": "Ash",
+     "tryOn": true,
+     "shades": [
+      {
+       "code": "7.1",
+       "nameFa": "خاکستری تیره",
+       "nameEn": "Dark Ash",
+       "faSource": "chart"
+      },
+      {
+       "code": "9.1",
+       "nameFa": "خاکستری پلاتینه روشن",
+       "nameEn": "Light Platinum Ash",
+       "faSource": "chart"
+      }
+     ]
+    },
+    {
+     "key": "golden",
+     "nameFa": "طلایی",
+     "nameEn": "Golden",
+     "tryOn": true,
+     "shades": [
+      {
+       "code": "5.5",
+       "nameFa": "قهوه‌ای طلایی روشن",
+       "nameEn": "Light Golden Brown",
+       "faSource": "chart"
+      },
+      {
+       "code": "6.5",
+       "nameFa": "بلوند طلایی تیره",
+       "nameEn": "Dark Golden Blonde",
+       "faSource": "chart"
+      },
+      {
+       "code": "7.5",
+       "nameFa": "بلوند طلایی متوسط",
+       "nameEn": "Medium Golden Blonde",
+       "faSource": "chart"
+      },
+      {
+       "code": "8.5",
+       "nameFa": "بلوند طلایی روشن",
+       "nameEn": "Light Golden Blonde",
+       "faSource": "chart"
+      },
+      {
+       "code": "9.5",
+       "nameFa": "بلوند طلایی خیلی روشن",
+       "nameEn": "Very Light Golden Blonde",
+       "faSource": "chart"
+      }
+     ]
+    },
+    {
+     "key": "matt",
+     "nameFa": "زیتونی",
+     "nameEn": "Matt",
+     "tryOn": true,
+     "shades": [
+      {
+       "code": "5.3",
+       "nameFa": "قهوه‌ای زیتونی روشن",
+       "nameEn": "Light Matt Brown",
+       "faSource": "chart"
+      },
+      {
+       "code": "6.3",
+       "nameFa": "بلوند زیتونی تیره",
+       "nameEn": "Dark Matt Blonde",
+       "faSource": "chart"
+      },
+      {
+       "code": "7.3",
+       "nameFa": "بلوند زیتونی متوسط",
+       "nameEn": "Medium Matt Blonde",
+       "faSource": "chart"
+      },
+      {
+       "code": "8.3",
+       "nameFa": "بلوند زیتونی روشن",
+       "nameEn": "Light Matt Blonde",
+       "faSource": "chart"
+      },
+      {
+       "code": "9.3",
+       "nameFa": "بلوند زیتونی خیلی روشن",
+       "nameEn": "Very Light Matt Blonde",
+       "faSource": "chart"
+      },
+      {
+       "code": "10.3",
+       "nameFa": "بلوند زیتونی پلاتینه",
+       "nameEn": "Platinum Matt Blonde",
+       "faSource": "chart"
+      }
+     ]
+    },
+    {
+     "key": "honey",
+     "nameFa": "عسلی",
+     "nameEn": "Honey",
+     "tryOn": true,
+     "shades": [
+      {
+       "code": "6.54",
+       "nameFa": "عسلی",
+       "nameEn": "Honey",
+       "faSource": "chart"
+      },
+      {
+       "code": "7.54",
+       "nameFa": "عسلی متوسط",
+       "nameEn": "Medium Honey",
+       "faSource": "chart"
+      },
+      {
+       "code": "8.54",
+       "nameFa": "عسلی روشن",
+       "nameEn": "Light Honey",
+       "faSource": "chart"
+      }
+     ]
+    },
+    {
+     "key": "tobacco",
+     "nameFa": "تنباکویی",
+     "nameEn": "Tobacco",
+     "tryOn": true,
+     "shades": [
+      {
+       "code": "6.65",
+       "nameFa": "بلوند تنباکویی تیره",
+       "nameEn": "Dark Tobacco Blonde",
+       "faSource": "chart"
+      },
+      {
+       "code": "7.65",
+       "nameFa": "بلوند تنباکویی متوسط",
+       "nameEn": "Medium Tobacco Blonde",
+       "faSource": "chart"
+      },
+      {
+       "code": "8.65",
+       "nameFa": "بلوند تنباکویی روشن",
+       "nameEn": "Light Tobacco Blonde",
+       "faSource": "chart"
+      }
+     ]
+    },
+    {
+     "key": "new-professional",
+     "nameFa": "حرفه‌ای",
+     "nameEn": "New Professional",
+     "tryOn": true,
+     "shades": [
+      {
+       "code": "1.1",
+       "nameFa": "مشکی آبی",
+       "nameEn": "Blue Black",
+       "faSource": "chart"
+      },
+      {
+       "code": "6.08",
+       "nameFa": "بلوند بورگاندی تیره",
+       "nameEn": "Dark Burgundy Blonde",
+       "faSource": "chart"
+      },
+      {
+       "code": "7.83",
+       "nameFa": "قهوه‌ای سرد",
+       "nameEn": "Cool Brown",
+       "faSource": "chart"
+      },
+      {
+       "code": "8.51",
+       "nameFa": "بیسکویتی",
+       "nameEn": "Biscuit",
+       "faSource": "chart"
+      },
+      {
+       "code": "9.56",
+       "nameFa": "رز گلد",
+       "nameEn": "Rose Gold",
+       "faSource": "chart"
+      }
+     ]
+    },
+    {
+     "key": "copper",
+     "nameFa": "مسی",
+     "nameEn": "Copper",
+     "tryOn": true,
+     "shades": [
+      {
+       "code": "6.4",
+       "nameFa": "بلوند مسی تیره",
+       "nameEn": "Dark Copper Blonde",
+       "faSource": "derived-check"
+      },
+      {
+       "code": "6.43",
+       "nameFa": "بلوند برنزی مسی تیره",
+       "nameEn": "Dark Copper Bronze Blonde",
+       "faSource": "derived-check"
+      },
+      {
+       "code": "8.44",
+       "nameFa": "مسی",
+       "nameEn": "Copper",
+       "faSource": "derived-check"
+      }
+     ]
+    },
+    {
+     "key": "mahogany",
+     "nameFa": "ماهاگونی",
+     "nameEn": "Mahogany",
+     "tryOn": true,
+     "shades": [
+      {
+       "code": "5.55",
+       "nameFa": "قهوه‌ای ماهاگونی تیره",
+       "nameEn": "Dark Mahogany Brown",
+       "faSource": "derived-check"
+      },
+      {
+       "code": "6.55",
+       "nameFa": "بلوند ماهاگونی متوسط",
+       "nameEn": "Medium Mahogany Blonde",
+       "faSource": "derived-check"
+      },
+      {
+       "code": "7.55",
+       "nameFa": "بلوند ماهاگونی روشن",
+       "nameEn": "Light Mahogany Blonde",
+       "faSource": "derived-check"
+      }
+     ]
+    },
+    {
+     "key": "violet",
+     "nameFa": "بنفش",
+     "nameEn": "Violet",
+     "tryOn": true,
+     "shades": [
+      {
+       "code": "5.20",
+       "nameFa": "بنفش متوسط",
+       "nameEn": "Medium Violet",
+       "faSource": "derived-check"
+      },
+      {
+       "code": "6.20",
+       "nameFa": "بنفش روشن",
+       "nameEn": "Light Violet",
+       "faSource": "derived-check"
+      },
+      {
+       "code": "7.20",
+       "nameFa": "بنفش خیلی روشن",
+       "nameEn": "Very Light Violet",
+       "faSource": "derived-check"
+      }
+     ]
+    },
+    {
+     "key": "red",
+     "nameFa": "قرمز",
+     "nameEn": "Red",
+     "tryOn": true,
+     "shades": [
+      {
+       "code": "5.62",
+       "nameFa": "قرمز آلبالویی",
+       "nameEn": "Cherry Red",
+       "faSource": "derived-check"
+      },
+      {
+       "code": "6.64",
+       "nameFa": "بلوند قرمز مسی تیره",
+       "nameEn": "Dark Red Copper Blonde",
+       "faSource": "derived-check"
+      },
+      {
+       "code": "7.66",
+       "nameFa": "قرمز یاقوتی",
+       "nameEn": "Ruby Red",
+       "faSource": "derived-check"
+      }
+     ]
+    },
+    {
+     "key": "cinnamon",
+     "nameFa": "دارچینی",
+     "nameEn": "Cinnamon",
+     "tryOn": true,
+     "shades": [
+      {
+       "code": "6.37",
+       "nameFa": "بلوند دارچینی تیره",
+       "nameEn": "Dark Cinnamon Blonde",
+       "faSource": "derived-check"
+      },
+      {
+       "code": "8.37",
+       "nameFa": "بلوند دارچینی روشن",
+       "nameEn": "Light Cinnamon Blonde",
+       "faSource": "derived-check"
+      }
+     ]
+    },
+    {
+     "key": "nescafe",
+     "nameFa": "نسکافه‌ای",
+     "nameEn": "Nescafe",
+     "tryOn": true,
+     "shades": [
+      {
+       "code": "5.7",
+       "nameFa": "قهوه‌ای نسکافه‌ای روشن",
+       "nameEn": "Light Nescafe Brown",
+       "faSource": "derived-check"
+      },
+      {
+       "code": "6.7",
+       "nameFa": "بلوند نسکافه‌ای تیره",
+       "nameEn": "Dark Nescafe Blonde",
+       "faSource": "derived-check"
+      },
+      {
+       "code": "7.7",
+       "nameFa": "بلوند نسکافه‌ای",
+       "nameEn": "Nescafe Blonde",
+       "faSource": "derived-check"
+      }
+     ]
+    },
+    {
+     "key": "chocolate",
+     "nameFa": "شکلاتی",
+     "nameEn": "Chocolate",
+     "tryOn": true,
+     "shades": [
+      {
+       "code": "5.53",
+       "nameFa": "قهوه‌ای شکلاتی متوسط",
+       "nameEn": "Medium Chocolate Brown",
+       "faSource": "derived-check"
+      },
+      {
+       "code": "6.53",
+       "nameFa": "قهوه‌ای شکلاتی روشن",
+       "nameEn": "Light Chocolate Brown",
+       "faSource": "derived-check"
+      },
+      {
+       "code": "7.53",
+       "nameFa": "بلوند شکلاتی تیره",
+       "nameEn": "Dark Chocolate Blonde",
+       "faSource": "derived-check"
+      },
+      {
+       "code": "8.53",
+       "nameFa": "بلوند شکلاتی متوسط",
+       "nameEn": "Medium Chocolate Blonde",
+       "faSource": "derived-check"
+      },
+      {
+       "code": "9.53",
+       "nameFa": "بلوند شکلاتی روشن",
+       "nameEn": "Light Chocolate Blonde",
+       "faSource": "derived-check"
+      }
+     ]
+    },
+    {
+     "key": "beige",
+     "nameFa": "بژ",
+     "nameEn": "Beige",
+     "tryOn": true,
+     "shades": [
+      {
+       "code": "6.31",
+       "nameFa": "بلوند بژ تیره",
+       "nameEn": "Dark Beige Blonde",
+       "faSource": "derived-check"
+      },
+      {
+       "code": "7.31",
+       "nameFa": "بلوند بژ متوسط",
+       "nameEn": "Medium Beige Blonde",
+       "faSource": "derived-check"
+      },
+      {
+       "code": "8.31",
+       "nameFa": "بلوند بژ روشن",
+       "nameEn": "Light Beige Blonde",
+       "faSource": "derived-check"
+      },
+      {
+       "code": "9.31",
+       "nameFa": "بلوند بژ خیلی روشن",
+       "nameEn": "Very Light Beige Blonde",
+       "faSource": "derived-check"
+      }
+     ]
+    },
+    {
+     "key": "highlight",
+     "nameFa": "هایلایت",
+     "nameEn": "Highlight",
+     "tryOn": true,
+     "shades": [
+      {
+       "code": "11.00",
+       "nameFa": "بلوند پلاتینه سوپر",
+       "nameEn": "Super Platinum Blonde",
+       "faSource": "derived-check"
+      },
+      {
+       "code": "11.10",
+       "nameFa": "بلوند پلاتینه خاکستری سوپر",
+       "nameEn": "Super Platinum Ash Blonde",
+       "faSource": "derived-check"
+      },
+      {
+       "code": "11.31",
+       "nameFa": "بژ پلاتینه سوپر",
+       "nameEn": "Super Platinum Beige",
+       "faSource": "derived-check"
+      },
+      {
+       "code": "11.56",
+       "nameFa": "بلوند پلاتینه رز گلد سوپر",
+       "nameEn": "Super Rose Gold Platinum Blonde",
+       "faSource": "derived-check"
+      },
+      {
+       "code": "11.61",
+       "nameFa": "بلوند پلاتینه مرواریدی سوپر",
+       "nameEn": "Super Platinum Pearl Blonde",
+       "faSource": "derived-check"
+      },
+      {
+       "code": "11.90",
+       "nameFa": "بلوند پلاتینه دودی سوپر",
+       "nameEn": "Super Platinum Smoky Blonde",
+       "faSource": "derived-check"
+      },
+      {
+       "code": "90.32",
+       "nameFa": "کرم استخوانی",
+       "nameEn": "Bony Cream",
+       "faSource": "derived-check"
+      }
+     ]
+    },
+    {
+     "key": "caramel",
+     "nameFa": "کاراملی",
+     "nameEn": "Caramel",
+     "tryOn": true,
+     "shades": [
+      {
+       "code": "7.07",
+       "nameFa": "بلوند کاراملی متوسط",
+       "nameEn": "Medium Caramel Blonde",
+       "faSource": "derived-check"
+      },
+      {
+       "code": "9.07",
+       "nameFa": "بلوند کاراملی خیلی روشن",
+       "nameEn": "Very Light Caramel Blonde",
+       "faSource": "derived-check"
+      }
+     ]
+    },
+    {
+     "key": "pearl",
+     "nameFa": "مرواریدی",
+     "nameEn": "Pearl",
+     "tryOn": true,
+     "shades": [
+      {
+       "code": "7.61",
+       "nameFa": "بلوند مرواریدی متوسط",
+       "nameEn": "Medium Pearl Blonde",
+       "faSource": "derived-check"
+      },
+      {
+       "code": "9.61",
+       "nameFa": "بلوند مرواریدی خیلی روشن",
+       "nameEn": "Very Light Pearl Blonde",
+       "faSource": "derived-check"
+      }
+     ]
+    },
+    {
+     "key": "hemp",
+     "nameFa": "کنفی",
+     "nameEn": "Hemp",
+     "tryOn": true,
+     "shades": [
+      {
+       "code": "6.81",
+       "nameFa": "بلوند کنفی تیره",
+       "nameEn": "Dark Hemp Blonde",
+       "faSource": "derived-check"
+      },
+      {
+       "code": "8.81",
+       "nameFa": "بلوند کنفی روشن",
+       "nameEn": "Light Hemp Blonde",
+       "faSource": "derived-check"
+      }
+     ]
+    },
+    {
+     "key": "cappuccino",
+     "nameFa": "کاپوچینو",
+     "nameEn": "Cappuccino",
+     "tryOn": true,
+     "shades": [
+      {
+       "code": "6.73",
+       "nameFa": "بلوند کاپوچینو تیره",
+       "nameEn": "Dark Cappuccino Blonde",
+       "faSource": "derived-check"
+      },
+      {
+       "code": "8.73",
+       "nameFa": "بلوند کاپوچینو روشن",
+       "nameEn": "Light Cappuccino Blonde",
+       "faSource": "derived-check"
+      }
+     ]
+    },
+    {
+     "key": "sandy",
+     "nameFa": "شنی",
+     "nameEn": "Sandy",
+     "tryOn": true,
+     "shades": [
+      {
+       "code": "6.71",
+       "nameFa": "بلوند شنی تیره",
+       "nameEn": "Dark Sandy Blonde",
+       "faSource": "derived-check"
+      },
+      {
+       "code": "8.71",
+       "nameFa": "بلوند شنی روشن",
+       "nameEn": "Light Sandy Blonde",
+       "faSource": "derived-check"
+      }
+     ]
+    },
+    {
+     "key": "miniature",
+     "nameFa": "مینیاتوری",
+     "nameEn": "Miniature",
+     "tryOn": true,
+     "shades": [
+      {
+       "code": "601",
+       "nameFa": "بلوند کریستالی سوپر روشن",
+       "nameEn": "Super Light Crystal Blonde",
+       "faSource": "chart"
+      },
+      {
+       "code": "602",
+       "nameFa": "بلوند صدفی سوپر روشن",
+       "nameEn": "Super Light Nacre Blonde",
+       "faSource": "chart"
+      },
+      {
+       "code": "603",
+       "nameFa": "بلوند کهربایی",
+       "nameEn": "Amber Blonde",
+       "faSource": "chart"
+      },
+      {
+       "code": "604",
+       "nameFa": "بلوند گرانیتی",
+       "nameEn": "Granite Blonde",
+       "faSource": "chart"
+      },
+      {
+       "code": "605",
+       "nameFa": "برنز قهوه‌ای",
+       "nameEn": "Brown Bronze",
+       "faSource": "chart"
+      },
+      {
+       "code": "606",
+       "nameFa": "نقره‌ای مینیاتوری",
+       "nameEn": "Miniature Silver",
+       "faSource": "chart"
+      },
+      {
+       "code": "607",
+       "nameFa": "خاکستری مینیاتوری",
+       "nameEn": "Miniature Ash",
+       "faSource": "chart"
+      },
+      {
+       "code": "608",
+       "nameFa": "نقره‌ای طبیعی فانتزی",
+       "nameEn": "Fantasy Natural Silver",
+       "faSource": "chart"
+      },
+      {
+       "code": "609",
+       "nameFa": "صورتی مینیاتوری",
+       "nameEn": "Miniature Pink",
+       "faSource": "chart"
+      },
+      {
+       "code": "9.35",
+       "nameFa": "رز گلد مینیاتوری",
+       "nameEn": "Miniature Rose Gold",
+       "faSource": "chart"
+      },
+      {
+       "code": "12.03",
+       "nameFa": "یاسی مینیاتوری",
+       "nameEn": "Miniature Jasmine",
+       "faSource": "chart"
+      },
+      {
+       "code": "12.05",
+       "nameFa": "بیسکویتی مینیاتوری",
+       "nameEn": "Miniature Biscuit",
+       "faSource": "chart"
+      },
+      {
+       "code": "12.06",
+       "nameFa": "شیر شکلات",
+       "nameEn": "Chocolate Milk",
+       "faSource": "chart"
+      }
+     ]
+    },
+    {
+     "key": "fashion",
+     "nameFa": "فشن",
+     "nameEn": "Fashion",
+     "tryOn": true,
+     "shades": [
+      {
+       "code": "S6",
+       "nameFa": "آبی کاربنی",
+       "nameEn": "Blue Carbon",
+       "faSource": "chart"
+      },
+      {
+       "code": "S7",
+       "nameFa": "صورتی پاستیلی",
+       "nameEn": "Pastel Pink",
+       "faSource": "chart"
+      },
+      {
+       "code": "S8",
+       "nameFa": "یاسی",
+       "nameEn": "Jasmine",
+       "faSource": "chart"
+      }
+     ]
+    },
+    {
+     "key": "corrector",
+     "nameFa": "واریاسیون",
+     "nameEn": "Corrector",
+     "tryOn": false,
+     "shades": [
+      {
+       "code": "000",
+       "nameFa": "سفید",
+       "nameEn": "White",
+       "faSource": "chart"
+      },
+      {
+       "code": "011",
+       "nameFa": "دودی",
+       "nameEn": "Ash",
+       "faSource": "chart"
+      },
+      {
+       "code": "088",
+       "nameFa": "سبز",
+       "nameEn": "Green",
+       "faSource": "chart"
+      },
+      {
+       "code": "055",
+       "nameFa": "قرمز",
+       "nameEn": "Red",
+       "faSource": "chart"
+      },
+      {
+       "code": "066",
+       "nameFa": "بنفش",
+       "nameEn": "Violet",
+       "faSource": "chart"
+      },
+      {
+       "code": "099",
+       "nameFa": "آبی",
+       "nameEn": "Blue",
+       "faSource": "chart"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "key": "oyster-perlacolor",
+   "brand": "Oyster",
+   "nameFa": "اویستر پرلاکالر",
+   "nameEn": "Oyster Perlacolor",
+   "families": [
+    {
+     "key": "naturali",
+     "nameFa": "طبیعی",
+     "nameEn": "Naturali",
+     "tryOn": true,
+     "shades": [
+      {
+       "code": "1/0",
+       "nameFa": "مشکی",
+       "nameEn": "Black",
+       "faSource": "translated-check"
+      },
+      {
+       "code": "3/0",
+       "nameFa": "قهوه‌ای تیره",
+       "nameEn": "Dark Brown",
+       "faSource": "translated-check"
+      },
+      {
+       "code": "4/0",
+       "nameFa": "قهوه‌ای متوسط",
+       "nameEn": "Medium Brown",
+       "faSource": "translated-check"
+      },
+      {
+       "code": "5/0",
+       "nameFa": "قهوه‌ای روشن",
+       "nameEn": "Light Brown",
+       "faSource": "translated-check"
+      },
+      {
+       "code": "6/0",
+       "nameFa": "بلوند تیره",
+       "nameEn": "Dark Blond",
+       "faSource": "translated-check"
+      },
+      {
+       "code": "7/0",
+       "nameFa": "بلوند متوسط",
+       "nameEn": "Medium Blond",
+       "faSource": "translated-check"
+      },
+      {
+       "code": "8/0",
+       "nameFa": "بلوند روشن",
+       "nameEn": "Light Blond",
+       "faSource": "translated-check"
+      },
+      {
+       "code": "9/0",
+       "nameFa": "بلوند خیلی روشن",
+       "nameEn": "Very Light Blond",
+       "faSource": "translated-check"
+      },
+      {
+       "code": "10/0",
+       "nameFa": "بلوند پلاتینه",
+       "nameEn": "Platinum Blond",
+       "faSource": "translated-check"
+      }
+     ]
+    },
+    {
+     "key": "naturali-intensi",
+     "nameFa": "طبیعی قوی",
+     "nameEn": "Naturali Intensi",
+     "tryOn": true,
+     "shades": [
+      {
+       "code": "3/00",
+       "nameFa": "قهوه‌ای قوی تیره",
+       "nameEn": "Dark Intensive Brown",
+       "faSource": "translated-check"
+      },
+      {
+       "code": "4/00",
+       "nameFa": "قهوه‌ای قوی متوسط",
+       "nameEn": "Medium Intensive Brown",
+       "faSource": "translated-check"
+      },
+      {
+       "code": "5/00",
+       "nameFa": "قهوه‌ای قوی روشن",
+       "nameEn": "Light Intensive Brown",
+       "faSource": "translated-check"
+      },
+      {
+       "code": "6/00",
+       "nameFa": "بلوند قوی تیره",
+       "nameEn": "Dark Intensive Blond",
+       "faSource": "translated-check"
+      },
+      {
+       "code": "7/00",
+       "nameFa": "بلوند قوی متوسط",
+       "nameEn": "Medium Intensive Blond",
+       "faSource": "translated-check"
+      },
+      {
+       "code": "8/00",
+       "nameFa": "بلوند قوی روشن",
+       "nameEn": "Light Intensive Blond",
+       "faSource": "translated-check"
+      },
+      {
+       "code": "9/00",
+       "nameFa": "بلوند قوی خیلی روشن",
+       "nameEn": "Very Light Intensive Blond",
+       "faSource": "translated-check"
+      },
+      {
+       "code": "10/00",
+       "nameFa": "بلوند قوی پلاتینه",
+       "nameEn": "Platinum Intensive Blond",
+       "faSource": "translated-check"
+      }
+     ]
+    },
+    {
+     "key": "cenere",
+     "nameFa": "خاکستری",
+     "nameEn": "Cenere",
+     "tryOn": true,
+     "shades": [
+      {
+       "code": "1/1",
+       "nameFa": "مشکی آبی",
+       "nameEn": "Blue Black",
+       "faSource": "translated-check"
+      },
+      {
+       "code": "5/1",
+       "nameFa": "قهوه‌ای خاکستری روشن",
+       "nameEn": "Light Ash Brown",
+       "faSource": "translated-check"
+      },
+      {
+       "code": "6/1",
+       "nameFa": "بلوند خاکستری تیره",
+       "nameEn": "Dark Ash Blond",
+       "faSource": "translated-check"
+      },
+      {
+       "code": "7/1",
+       "nameFa": "بلوند خاکستری متوسط",
+       "nameEn": "Medium Ash Blond",
+       "faSource": "translated-check"
+      },
+      {
+       "code": "8/1",
+       "nameFa": "بلوند خاکستری روشن",
+       "nameEn": "Light Ash Blond",
+       "faSource": "translated-check"
+      },
+      {
+       "code": "9/1",
+       "nameFa": "بلوند خاکستری خیلی روشن",
+       "nameEn": "Very Light Ash Blond",
+       "faSource": "translated-check"
+      },
+      {
+       "code": "10/1",
+       "nameFa": "بلوند خاکستری پلاتینه",
+       "nameEn": "Platinum Ash Blond",
+       "faSource": "translated-check"
+      }
+     ]
+    },
+    {
+     "key": "matt",
+     "nameFa": "زیتونی",
+     "nameEn": "Matt",
+     "tryOn": true,
+     "shades": [
+      {
+       "code": "5/11",
+       "nameFa": "قهوه‌ای زیتونی روشن",
+       "nameEn": "Light Matt Brown",
+       "faSource": "translated-check"
+      },
+      {
+       "code": "6/11",
+       "nameFa": "بلوند زیتونی تیره",
+       "nameEn": "Dark Matt Blond",
+       "faSource": "translated-check"
+      },
+      {
+       "code": "7/11",
+       "nameFa": "بلوند زیتونی متوسط",
+       "nameEn": "Medium Matt Blond",
+       "faSource": "translated-check"
+      },
+      {
+       "code": "8/11",
+       "nameFa": "بلوند زیتونی روشن",
+       "nameEn": "Light Matt Blond",
+       "faSource": "translated-check"
+      },
+      {
+       "code": "9/11",
+       "nameFa": "بلوند زیتونی خیلی روشن",
+       "nameEn": "Very Light Matt Blond",
+       "faSource": "translated-check"
+      },
+      {
+       "code": "10/11",
+       "nameFa": "بلوند زیتونی پلاتینه",
+       "nameEn": "Platinum Matt Blond",
+       "faSource": "translated-check"
+      }
+     ]
+    },
+    {
+     "key": "nacre",
+     "nameFa": "صدفی",
+     "nameEn": "Nacré",
+     "tryOn": true,
+     "shades": [
+      {
+       "code": "8/9",
+       "nameFa": "بلوند صدفی روشن",
+       "nameEn": "Light Nacre Blond",
+       "faSource": "translated-check"
+      },
+      {
+       "code": "9/9",
+       "nameFa": "بلوند صدفی خیلی روشن",
+       "nameEn": "Very Light Nacre Blond",
+       "faSource": "translated-check"
+      },
+      {
+       "code": "10/9",
+       "nameFa": "بلوند صدفی پلاتینه",
+       "nameEn": "Platinum Nacre Blond",
+       "faSource": "translated-check"
+      }
+     ]
+    },
+    {
+     "key": "cacao-freddo",
+     "nameFa": "کاکائویی سرد",
+     "nameEn": "Cacao Freddo",
+     "tryOn": true,
+     "shades": [
+      {
+       "code": "4/7",
+       "nameFa": "قهوه‌ای کاکائویی متوسط",
+       "nameEn": "Medium Cocoa Brown",
+       "faSource": "translated-check"
+      },
+      {
+       "code": "5/7",
+       "nameFa": "قهوه‌ای کاکائویی روشن",
+       "nameEn": "Light Cocoa Brown",
+       "faSource": "translated-check"
+      },
+      {
+       "code": "6/7",
+       "nameFa": "بلوند کاکائویی تیره",
+       "nameEn": "Dark Cocoa Blond",
+       "faSource": "translated-check"
+      },
+      {
+       "code": "7/7",
+       "nameFa": "بلوند کاکائویی متوسط",
+       "nameEn": "Medium Cocoa Blond",
+       "faSource": "translated-check"
+      },
+      {
+       "code": "8/7",
+       "nameFa": "بلوند کاکائویی روشن",
+       "nameEn": "Light Cocoa Blond",
+       "faSource": "translated-check"
+      },
+      {
+       "code": "9/7",
+       "nameFa": "بلوند کاکائویی خیلی روشن",
+       "nameEn": "Very Light Cocoa Blond",
+       "faSource": "translated-check"
+      }
+     ]
+    },
+    {
+     "key": "dorati",
+     "nameFa": "طلایی",
+     "nameEn": "Dorati",
+     "tryOn": true,
+     "shades": [
+      {
+       "code": "4/3",
+       "nameFa": "قهوه‌ای طلایی متوسط",
+       "nameEn": "Medium Golden Brown",
+       "faSource": "translated-check"
+      },
+      {
+       "code": "5/3",
+       "nameFa": "قهوه‌ای طلایی روشن",
+       "nameEn": "Light Golden Brown",
+       "faSource": "translated-check"
+      },
+      {
+       "code": "6/3",
+       "nameFa": "بلوند طلایی تیره",
+       "nameEn": "Dark Golden Blond",
+       "faSource": "translated-check"
+      },
+      {
+       "code": "7/3",
+       "nameFa": "بلوند طلایی متوسط",
+       "nameEn": "Medium Golden Blond",
+       "faSource": "translated-check"
+      },
+      {
+       "code": "8/3",
+       "nameFa": "بلوند طلایی روشن",
+       "nameEn": "Light Golden Blond",
+       "faSource": "translated-check"
+      },
+      {
+       "code": "9/3",
+       "nameFa": "بلوند طلایی خیلی روشن",
+       "nameEn": "Very Light Golden Blond",
+       "faSource": "translated-check"
+      },
+      {
+       "code": "10/3",
+       "nameFa": "بلوند طلایی پلاتینه",
+       "nameEn": "Platinum Golden Blond",
+       "faSource": "translated-check"
+      }
+     ]
+    },
+    {
+     "key": "dorati-intensi",
+     "nameFa": "طلایی قوی",
+     "nameEn": "Dorati Intensi",
+     "tryOn": true,
+     "shades": [
+      {
+       "code": "7/33",
+       "nameFa": "بلوند طلایی قوی متوسط",
+       "nameEn": "Medium Intensive Golden Blond",
+       "faSource": "translated-check"
+      },
+      {
+       "code": "8/33",
+       "nameFa": "بلوند طلایی قوی روشن",
+       "nameEn": "Light Intensive Golden Blond",
+       "faSource": "translated-check"
+      }
+     ]
+    },
+    {
+     "key": "sabbia",
+     "nameFa": "شنی",
+     "nameEn": "Sabbia",
+     "tryOn": true,
+     "shades": [
+      {
+       "code": "8/31",
+       "nameFa": "بلوند شنی روشن",
+       "nameEn": "Light Sand Blond",
+       "faSource": "translated-check"
+      },
+      {
+       "code": "9/31",
+       "nameFa": "بلوند شنی خیلی روشن",
+       "nameEn": "Very Light Sand Blond",
+       "faSource": "translated-check"
+      },
+      {
+       "code": "10/31",
+       "nameFa": "بلوند شنی پلاتینه",
+       "nameEn": "Platinum Sand Blond",
+       "faSource": "translated-check"
+      }
+     ]
+    },
+    {
+     "key": "rame",
+     "nameFa": "مسی",
+     "nameEn": "Rame",
+     "tryOn": true,
+     "shades": [
+      {
+       "code": "5/4",
+       "nameFa": "قهوه‌ای مسی روشن",
+       "nameEn": "Light Copper Brown",
+       "faSource": "translated-check"
+      },
+      {
+       "code": "6/4",
+       "nameFa": "بلوند مسی تیره",
+       "nameEn": "Dark Copper Blond",
+       "faSource": "translated-check"
+      },
+      {
+       "code": "7/4",
+       "nameFa": "بلوند مسی متوسط",
+       "nameEn": "Medium Copper Blond",
+       "faSource": "translated-check"
+      },
+      {
+       "code": "8/4",
+       "nameFa": "بلوند مسی روشن",
+       "nameEn": "Light Copper Blond",
+       "faSource": "translated-check"
+      },
+      {
+       "code": "9/4",
+       "nameFa": "بلوند مسی خیلی روشن",
+       "nameEn": "Very Light Copper Blond",
+       "faSource": "translated-check"
+      }
+     ]
+    },
+    {
+     "key": "rame-intensi",
+     "nameFa": "مسی قوی",
+     "nameEn": "Rame Intensi",
+     "tryOn": true,
+     "shades": [
+      {
+       "code": "6/44",
+       "nameFa": "بلوند مسی قوی تیره",
+       "nameEn": "Dark Intensive Copper Blond",
+       "faSource": "translated-check"
+      },
+      {
+       "code": "7/44",
+       "nameFa": "بلوند مسی قوی متوسط",
+       "nameEn": "Medium Intensive Copper Blond",
+       "faSource": "translated-check"
+      },
+      {
+       "code": "8/44",
+       "nameFa": "بلوند مسی قوی روشن",
+       "nameEn": "Light Intensive Copper Blond",
+       "faSource": "translated-check"
+      }
+     ]
+    },
+    {
+     "key": "mogano",
+     "nameFa": "ماهاگونی",
+     "nameEn": "Mogano",
+     "tryOn": true,
+     "shades": [
+      {
+       "code": "4/5",
+       "nameFa": "قهوه‌ای ماهاگونی متوسط",
+       "nameEn": "Medium Mahogany Brown",
+       "faSource": "translated-check"
+      },
+      {
+       "code": "5/5",
+       "nameFa": "قهوه‌ای ماهاگونی روشن",
+       "nameEn": "Light Mahogany Brown",
+       "faSource": "translated-check"
+      },
+      {
+       "code": "6/5",
+       "nameFa": "بلوند ماهاگونی تیره",
+       "nameEn": "Dark Mahogany Blond",
+       "faSource": "translated-check"
+      }
+     ]
+    },
+    {
+     "key": "irise",
+     "nameFa": "بنفش",
+     "nameEn": "Irisé",
+     "tryOn": true,
+     "shades": [
+      {
+       "code": "4/2",
+       "nameFa": "قهوه‌ای بنفش متوسط",
+       "nameEn": "Medium Irise Brown",
+       "faSource": "translated-check"
+      },
+      {
+       "code": "5/2",
+       "nameFa": "قهوه‌ای بنفش روشن",
+       "nameEn": "Light Irise Brown",
+       "faSource": "translated-check"
+      },
+      {
+       "code": "6/2",
+       "nameFa": "بلوند بنفش تیره",
+       "nameEn": "Dark Irise Blond",
+       "faSource": "translated-check"
+      },
+      {
+       "code": "7/2",
+       "nameFa": "بلوند بنفش متوسط",
+       "nameEn": "Medium Irise Blond",
+       "faSource": "translated-check"
+      }
+     ]
+    },
+    {
+     "key": "rossi",
+     "nameFa": "قرمز",
+     "nameEn": "Rossi",
+     "tryOn": true,
+     "shades": [
+      {
+       "code": "4/6",
+       "nameFa": "قهوه‌ای قرمز متوسط",
+       "nameEn": "Medium Red Brown",
+       "faSource": "translated-check"
+      },
+      {
+       "code": "5/66",
+       "nameFa": "قهوه‌ای قرمز قوی روشن",
+       "nameEn": "Light Intensive Red Brown",
+       "faSource": "translated-check"
+      },
+      {
+       "code": "6/66",
+       "nameFa": "بلوند قرمز قوی تیره",
+       "nameEn": "Dark Intensive Red Blond",
+       "faSource": "translated-check"
+      },
+      {
+       "code": "7/66",
+       "nameFa": "بلوند قرمز قوی متوسط",
+       "nameEn": "Medium Intensive Red Blond",
+       "faSource": "translated-check"
+      }
+     ]
+    },
+    {
+     "key": "tabacco-caldo",
+     "nameFa": "تنباکویی گرم",
+     "nameEn": "Tabacco Caldo",
+     "tryOn": true,
+     "shades": [
+      {
+       "code": "4/8",
+       "nameFa": "قهوه‌ای تنباکویی متوسط",
+       "nameEn": "Medium Tobacco Brown",
+       "faSource": "translated-check"
+      },
+      {
+       "code": "5/8",
+       "nameFa": "قهوه‌ای تنباکویی روشن",
+       "nameEn": "Light Tobacco Brown",
+       "faSource": "translated-check"
+      },
+      {
+       "code": "6/8",
+       "nameFa": "بلوند تنباکویی تیره",
+       "nameEn": "Dark Tobacco Blond",
+       "faSource": "translated-check"
+      },
+      {
+       "code": "7/8",
+       "nameFa": "بلوند تنباکویی متوسط",
+       "nameEn": "Medium Tobacco Blond",
+       "faSource": "translated-check"
+      },
+      {
+       "code": "8/8",
+       "nameFa": "بلوند تنباکویی روشن",
+       "nameEn": "Light Tobacco Blond",
+       "faSource": "translated-check"
+      }
+     ]
+    },
+    {
+     "key": "super-schiarenti",
+     "nameFa": "سوپر روشن‌کننده",
+     "nameEn": "Super Schiarenti",
+     "tryOn": false,
+     "shades": [
+      {
+       "code": "0/0",
+       "nameFa": "روشن‌کننده خنثی",
+       "nameEn": "Neutral Super Lightener",
+       "faSource": "translated-check"
+      },
+      {
+       "code": "11/0",
+       "nameFa": "سوپر روشن‌کننده طبیعی",
+       "nameEn": "Natural Super Lightener",
+       "faSource": "translated-check"
+      },
+      {
+       "code": "11/1",
+       "nameFa": "سوپر روشن‌کننده خاکستری",
+       "nameEn": "Ash Super Lightener",
+       "faSource": "translated-check"
+      },
+      {
+       "code": "12/1",
+       "nameFa": "سوپر روشن‌کننده خاکستری اکسترا",
+       "nameEn": "Extra Ash Super Lightener",
+       "faSource": "translated-check"
+      },
+      {
+       "code": "12/2",
+       "nameFa": "سوپر روشن‌کننده بنفش اکسترا",
+       "nameEn": "Extra Irise Super Lightener",
+       "faSource": "translated-check"
+      },
+      {
+       "code": "12/9",
+       "nameFa": "سوپر روشن‌کننده صدفی اکسترا",
+       "nameEn": "Extra Nacre Super Lightener",
+       "faSource": "translated-check"
+      },
+      {
+       "code": "12/11",
+       "nameFa": "سوپر روشن‌کننده زیتونی اکسترا",
+       "nameEn": "Extra Matt Super Lightener",
+       "faSource": "translated-check"
+      }
+     ]
+    },
+    {
+     "key": "mixtones",
+     "nameFa": "میکس‌تون",
+     "nameEn": "Mixtones",
+     "tryOn": false,
+     "shades": [
+      {
+       "code": "MIX-ASH",
+       "nameFa": "میکس‌تون خاکستری",
+       "nameEn": "Mixtone Ash",
+       "faSource": "translated-check"
+      },
+      {
+       "code": "MIX-GOLD",
+       "nameFa": "میکس‌تون زرد",
+       "nameEn": "Mixtone Gold",
+       "faSource": "translated-check"
+      },
+      {
+       "code": "MIX-RED",
+       "nameFa": "میکس‌تون قرمز",
+       "nameEn": "Mixtone Red",
+       "faSource": "translated-check"
+      },
+      {
+       "code": "MIX-BLUE",
+       "nameFa": "میکس‌تون آبی",
+       "nameEn": "Mixtone Blue",
+       "faSource": "translated-check"
+      },
+      {
+       "code": "MIX-COPPER",
+       "nameFa": "میکس‌تون نارنجی",
+       "nameEn": "Mixtone Copper",
+       "faSource": "translated-check"
+      },
+      {
+       "code": "MIX-PURPLE",
+       "nameFa": "میکس‌تون بنفش",
+       "nameEn": "Mixtone Purple",
+       "faSource": "translated-check"
+      },
+      {
+       "code": "MIX-GREEN",
+       "nameFa": "میکس‌تون سبز",
+       "nameEn": "Mixtone Green",
+       "faSource": "translated-check"
+      }
+     ]
+    },
+    {
+     "key": "blondye",
+     "nameFa": "بلوندای (تونر)",
+     "nameEn": "Blondye",
+     "tryOn": false,
+     "shades": [
+      {
+       "code": "0/090",
+       "nameFa": "پیگمنت خاکستری",
+       "nameEn": "Ash Grey Pigment",
+       "faSource": "translated-check"
+      },
+      {
+       "code": "0/002",
+       "nameFa": "پیگمنت مرواریدی خاکستری",
+       "nameEn": "Pearl Ash Pigment",
+       "faSource": "translated-check"
+      },
+      {
+       "code": "0/012",
+       "nameFa": "پیگمنت اسطوخودوسی خاکستری",
+       "nameEn": "Lavender Ash Pigment",
+       "faSource": "translated-check"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "key": "oyster-no-ammonia",
+   "brand": "Oyster",
+   "nameFa": "اویستر بدون آمونیاک",
+   "nameEn": "Oyster Perlacolor No Ammonia",
+   "families": [
+    {
+     "key": "naturali",
+     "nameFa": "طبیعی",
+     "nameEn": "Naturali",
+     "tryOn": true,
+     "shades": [
+      {
+       "code": "1/0",
+       "nameFa": "مشکی",
+       "nameEn": "Black",
+       "faSource": "translated-check"
+      },
+      {
+       "code": "3/0",
+       "nameFa": "قهوه‌ای تیره",
+       "nameEn": "Dark Brown",
+       "faSource": "translated-check"
+      },
+      {
+       "code": "4/0",
+       "nameFa": "قهوه‌ای متوسط",
+       "nameEn": "Medium Brown",
+       "faSource": "translated-check"
+      },
+      {
+       "code": "5/0",
+       "nameFa": "قهوه‌ای روشن",
+       "nameEn": "Light Brown",
+       "faSource": "translated-check"
+      },
+      {
+       "code": "6/0",
+       "nameFa": "بلوند تیره",
+       "nameEn": "Dark Blond",
+       "faSource": "translated-check"
+      },
+      {
+       "code": "7/0",
+       "nameFa": "بلوند متوسط",
+       "nameEn": "Medium Blond",
+       "faSource": "translated-check"
+      },
+      {
+       "code": "8/0",
+       "nameFa": "بلوند روشن",
+       "nameEn": "Light Blond",
+       "faSource": "translated-check"
+      },
+      {
+       "code": "9/0",
+       "nameFa": "بلوند خیلی روشن",
+       "nameEn": "Very Light Blond",
+       "faSource": "translated-check"
+      },
+      {
+       "code": "10/0",
+       "nameFa": "بلوند پلاتینه",
+       "nameEn": "Platinum Blond",
+       "faSource": "translated-check"
+      }
+     ]
+    },
+    {
+     "key": "cenere",
+     "nameFa": "خاکستری",
+     "nameEn": "Cenere",
+     "tryOn": true,
+     "shades": [
+      {
+       "code": "6/1",
+       "nameFa": "بلوند خاکستری تیره",
+       "nameEn": "Dark Ash Blond",
+       "faSource": "translated-check"
+      },
+      {
+       "code": "8/1",
+       "nameFa": "بلوند خاکستری روشن",
+       "nameEn": "Light Ash Blond",
+       "faSource": "translated-check"
+      },
+      {
+       "code": "10/1",
+       "nameFa": "بلوند خاکستری پلاتینه",
+       "nameEn": "Platinum Ash Blond",
+       "faSource": "translated-check"
+      }
+     ]
+    },
+    {
+     "key": "matt",
+     "nameFa": "زیتونی",
+     "nameEn": "Matt",
+     "tryOn": true,
+     "shades": [
+      {
+       "code": "6/11",
+       "nameFa": "بلوند زیتونی تیره",
+       "nameEn": "Dark Matt Blond",
+       "faSource": "translated-check"
+      },
+      {
+       "code": "8/11",
+       "nameFa": "بلوند زیتونی روشن",
+       "nameEn": "Light Matt Blond",
+       "faSource": "translated-check"
+      },
+      {
+       "code": "10/11",
+       "nameFa": "بلوند زیتونی پلاتینه",
+       "nameEn": "Platinum Matt Blond",
+       "faSource": "translated-check"
+      }
+     ]
+    },
+    {
+     "key": "irise",
+     "nameFa": "بنفش",
+     "nameEn": "Irisé",
+     "tryOn": true,
+     "shades": [
+      {
+       "code": "4/2",
+       "nameFa": "قهوه‌ای بنفش متوسط",
+       "nameEn": "Medium Irise Brown",
+       "faSource": "translated-check"
+      },
+      {
+       "code": "5/2",
+       "nameFa": "قهوه‌ای بنفش روشن",
+       "nameEn": "Light Irise Brown",
+       "faSource": "translated-check"
+      },
+      {
+       "code": "10/2",
+       "nameFa": "بلوند بنفش پلاتینه",
+       "nameEn": "Platinum Irise Blond",
+       "faSource": "translated-check"
+      }
+     ]
+    },
+    {
+     "key": "dorati",
+     "nameFa": "طلایی",
+     "nameEn": "Dorati",
+     "tryOn": true,
+     "shades": [
+      {
+       "code": "5/3",
+       "nameFa": "قهوه‌ای طلایی روشن",
+       "nameEn": "Light Golden Brown",
+       "faSource": "translated-check"
+      },
+      {
+       "code": "6/3",
+       "nameFa": "بلوند طلایی تیره",
+       "nameEn": "Dark Golden Blond",
+       "faSource": "translated-check"
+      },
+      {
+       "code": "7/3",
+       "nameFa": "بلوند طلایی متوسط",
+       "nameEn": "Medium Golden Blond",
+       "faSource": "translated-check"
+      },
+      {
+       "code": "10/3",
+       "nameFa": "بلوند طلایی پلاتینه",
+       "nameEn": "Platinum Golden Blond",
+       "faSource": "translated-check"
+      }
+     ]
+    },
+    {
+     "key": "cacao",
+     "nameFa": "کاکائویی",
+     "nameEn": "Cacao",
+     "tryOn": true,
+     "shades": [
+      {
+       "code": "4/7",
+       "nameFa": "قهوه‌ای کاکائویی متوسط",
+       "nameEn": "Medium Cocoa Brown",
+       "faSource": "translated-check"
+      },
+      {
+       "code": "5/7",
+       "nameFa": "قهوه‌ای کاکائویی روشن",
+       "nameEn": "Light Cocoa Brown",
+       "faSource": "translated-check"
+      },
+      {
+       "code": "6/7",
+       "nameFa": "بلوند کاکائویی تیره",
+       "nameEn": "Dark Cocoa Blond",
+       "faSource": "translated-check"
+      },
+      {
+       "code": "8/7",
+       "nameFa": "بلوند کاکائویی روشن",
+       "nameEn": "Light Cocoa Blond",
+       "faSource": "translated-check"
+      },
+      {
+       "code": "10/7",
+       "nameFa": "بلوند کاکائویی پلاتینه",
+       "nameEn": "Platinum Cocoa Blond",
+       "faSource": "translated-check"
+      }
+     ]
+    },
+    {
+     "key": "tabacco",
+     "nameFa": "تنباکویی",
+     "nameEn": "Tabacco",
+     "tryOn": true,
+     "shades": [
+      {
+       "code": "8/8",
+       "nameFa": "بلوند تنباکویی روشن",
+       "nameEn": "Light Tobacco Blond",
+       "faSource": "translated-check"
+      },
+      {
+       "code": "10/8",
+       "nameFa": "بلوند تنباکویی پلاتینه",
+       "nameEn": "Platinum Tobacco Blond",
+       "faSource": "translated-check"
+      }
+     ]
+    },
+    {
+     "key": "nacre",
+     "nameFa": "صدفی",
+     "nameEn": "Nacré",
+     "tryOn": true,
+     "shades": [
+      {
+       "code": "8/9",
+       "nameFa": "بلوند صدفی روشن",
+       "nameEn": "Light Nacre Blond",
+       "faSource": "translated-check"
+      },
+      {
+       "code": "10/9",
+       "nameFa": "بلوند صدفی پلاتینه",
+       "nameEn": "Platinum Nacre Blond",
+       "faSource": "translated-check"
+      }
+     ]
+    },
+    {
+     "key": "rame",
+     "nameFa": "مسی",
+     "nameEn": "Rame",
+     "tryOn": true,
+     "shades": [
+      {
+       "code": "6/4",
+       "nameFa": "بلوند مسی تیره",
+       "nameEn": "Dark Copper Blond",
+       "faSource": "translated-check"
+      },
+      {
+       "code": "7/4",
+       "nameFa": "بلوند مسی متوسط",
+       "nameEn": "Medium Copper Blond",
+       "faSource": "translated-check"
+      },
+      {
+       "code": "8/4",
+       "nameFa": "بلوند مسی روشن",
+       "nameEn": "Light Copper Blond",
+       "faSource": "translated-check"
+      }
+     ]
+    },
+    {
+     "key": "mogano",
+     "nameFa": "ماهاگونی",
+     "nameEn": "Mogano",
+     "tryOn": true,
+     "shades": [
+      {
+       "code": "5/5",
+       "nameFa": "قهوه‌ای ماهاگونی روشن",
+       "nameEn": "Light Mahogany Brown",
+       "faSource": "translated-check"
+      }
+     ]
+    },
+    {
+     "key": "rossi",
+     "nameFa": "قرمز",
+     "nameEn": "Rossi",
+     "tryOn": true,
+     "shades": [
+      {
+       "code": "4/6",
+       "nameFa": "قهوه‌ای قرمز متوسط",
+       "nameEn": "Medium Red Brown",
+       "faSource": "translated-check"
+      },
+      {
+       "code": "6/6",
+       "nameFa": "بلوند قرمز تیره",
+       "nameEn": "Dark Red Blond",
+       "faSource": "translated-check"
+      }
+     ]
+    },
+    {
+     "key": "mixtones",
+     "nameFa": "میکس‌تون",
+     "nameEn": "Mixtones",
+     "tryOn": false,
+     "shades": [
+      {
+       "code": "MIX-GOLD",
+       "nameFa": "میکس‌تون زرد",
+       "nameEn": "Mixtone Gold",
+       "faSource": "translated-check"
+      },
+      {
+       "code": "MIX-BLUE",
+       "nameFa": "میکس‌تون آبی",
+       "nameEn": "Mixtone Blue",
+       "faSource": "translated-check"
+      },
+      {
+       "code": "MIX-ASH",
+       "nameFa": "میکس‌تون خاکستری",
+       "nameEn": "Mixtone Ash",
+       "faSource": "translated-check"
+      }
+     ]
+    },
+    {
+     "key": "neutro",
+     "nameFa": "خنثی",
+     "nameEn": "Neutro",
+     "tryOn": false,
+     "shades": [
+      {
+       "code": "0/0",
+       "nameFa": "روشن‌کننده خنثی",
+       "nameEn": "Neutral Super Lightener",
+       "faSource": "translated-check"
+      }
+     ]
+    }
+   ]
+  }
+ ]
+}

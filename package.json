@@ -10,7 +10,9 @@
     "db:generate": "prisma generate",
     "db:deploy": "prisma migrate deploy",
     "db:seed": "tsx scripts/seed-catalog.ts",
-    "postinstall": "prisma generate"
+    "postinstall": "prisma generate",
+    "test": "node --import tsx --test lib/**/*.test.ts",
+    "db:sample": "tsx scripts/seed-sample.ts"
   },
   "dependencies": {
     "@mediapipe/tasks-vision": "^0.10.35",

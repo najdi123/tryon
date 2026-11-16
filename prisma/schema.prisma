@@ -1,0 +1,216 @@
+// Ayeneh-rang data model. The catalogue, the galleries and their QR tokens,
+// anonymous sessions, analytics events, and the staff panel's users.
+// Rule: no photo and no phone number ever sits in Session or AnalyticsEvent.
+
+generator client {
+  provider     = "prisma-client"
+  output       = "../lib/generated/prisma"
+  runtime      = "nodejs"
+  moduleFormat = "esm"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ─── Catalogue ──────────────────────────────────────────────────────────────
+
+model Brand {
+  id     String        @id @default(cuid())
+  key    String        @unique
+  nameFa String
+  nameEn String
+  sort   Int           @default(0)
+  lines  ProductLine[]
+}
+
+model ProductLine {
+  id            String   @id @default(cuid())
+  key           String   @unique
+  brandId       String
+  brand         Brand    @relation(fields: [brandId], references: [id])
+  nameFa        String
+  nameEn        String
+  descriptionFa String?
+  active        Boolean  @default(true)
+  sort          Int      @default(0)
+  shades        Shade[]
+  events        AnalyticsEvent[]
+}
+
+// The same code in two lines is two products: unique on (lineId, code).
+model Shade {
+  id               String      @id @default(cuid())
+  lineId           String
+  line             ProductLine @relation(fields: [lineId], references: [id])
+  code             String
+  nameFa           String
+  nameEn           String
+  familyKey        String
+  familyFa         String
+  hex              String?
+  colorDescription String?
+  tryOn            Boolean     @default(true) // false: correctors, mixtones, lighteners, toners
+  nameChecked      Boolean     @default(false) // the Farsi name was read off the printed chart
+  active           Boolean     @default(true)
+  sort             Int         @default(0)
+  events           AnalyticsEvent[]
+
+  @@unique([lineId, code])
+  @@index([lineId, familyKey])
+}
+
+// ─── Galleries and their QR ─────────────────────────────────────────────────
+
+enum GalleryStatus {
+  ACTIVE
+  INACTIVE
+}
+
+model Gallery {
+  id        String        @id @default(cuid())
+  publicId  String        @unique // the staff-facing id, e.g. G-1024
+  name      String
+  province  String
+  city      String
+  status    GalleryStatus @default(ACTIVE)
+  isSample  Boolean       @default(false)
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+  tokens    QrToken[]
+  sessions  Session[]
+  events    AnalyticsEvent[]
+
+  @@index([province])
+}
+
+// The token is random and carries nothing personal. Deactivating keeps history.
+model QrToken {
+  id        String    @id @default(cuid())
+  token     String    @unique
+  galleryId String
+  gallery   Gallery   @relation(fields: [galleryId], references: [id])
+  active    Boolean   @default(true)
+  createdAt DateTime  @default(now())
+  revokedAt DateTime?
+  sessions  Session[]
+}
+
+// ─── Sessions and events ────────────────────────────────────────────────────
+
+enum SessionOrigin {
+  QR
+  DIRECT // opened without a valid QR: reported as unknown origin
+}
+
+model Session {
+  id         String        @id @default(cuid())
+  visitorId  String // anonymous browser id; an estimate of people, never a person
+  origin     SessionOrigin
+  galleryId  String?
+  gallery    Gallery?      @relation(fields: [galleryId], references: [id])
+  qrTokenId  String?
+  qrToken    QrToken?      @relation(fields: [qrTokenId], references: [id])
+  isTest     Boolean       @default(false) // staff traffic, left out of the main report
+  isBot      Boolean       @default(false)
+  startedAt  DateTime      @default(now())
+  lastSeenAt DateTime      @default(now()) // a session ends after 30 minutes without activity
+  events     AnalyticsEvent[]
+  contact    SessionContact?
+
+  @@index([startedAt])
+  @@index([galleryId, startedAt])
+  @@index([visitorId, lastSeenAt])
+}
+
+// Optional, kept apart from analytics and hidden in the panel by default.
+model SessionContact {
+  sessionId String   @id
+  session   Session  @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  name      String?
+  mobile    String?
+  province  String?
+  createdAt DateTime @default(now())
+}
+
+enum EventType {
+  QR_LANDING
+  SESSION_STARTED
+  BRAND_SELECTED
+  PHOTO_READY
+  SHADE_SELECTED
+  TRYON_STARTED
+  TRYON_SUCCEEDED
+  TRYON_FAILED
+  RESULT_DOWNLOADED
+}
+
+// eventId comes from the browser and is unique: a resend or a refresh never counts twice.
+// galleryId is copied from the session, which got it from the server-checked token.
+model AnalyticsEvent {
+  id        String       @id @default(cuid())
+  eventId   String       @unique
+  type      EventType
+  sessionId String
+  session   Session      @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  galleryId String?
+  gallery   Gallery?     @relation(fields: [galleryId], references: [id])
+  lineId    String?
+  line      ProductLine? @relation(fields: [lineId], references: [id])
+  shadeId   String?
+  shade     Shade?       @relation(fields: [shadeId], references: [id])
+  status    String?
+  createdAt DateTime     @default(now()) // server time
+
+  @@index([type, createdAt])
+  @@index([galleryId, type, createdAt])
+  @@index([shadeId, type, createdAt])
+  @@index([sessionId])
+}
+
+// ─── Staff panel ────────────────────────────────────────────────────────────
+
+enum AdminRole {
+  ADMIN
+  VIEWER
+}
+
+model AdminUser {
+  id           String         @id @default(cuid())
+  username     String         @unique
+  displayName  String
+  passwordHash String
+  role         AdminRole      @default(VIEWER)
+  active       Boolean        @default(true)
+  createdAt    DateTime       @default(now())
+  sessions     AdminSession[]
+  changes      ChangeLog[]
+}
+
+model AdminSession {
+  id          String    @id @default(cuid())
+  tokenHash   String    @unique
+  adminUserId String
+  adminUser   AdminUser @relation(fields: [adminUserId], references: [id], onDelete: Cascade)
+  createdAt   DateTime  @default(now())
+  expiresAt   DateTime
+}
+
+model ChangeLog {
+  id          String    @id @default(cuid())
+  adminUserId String
+  adminUser   AdminUser @relation(fields: [adminUserId], references: [id])
+  action      String
+  entity      String
+  entityId    String?
+  summary     String
+  createdAt   DateTime  @default(now())
+
+  @@index([createdAt])
+}
+
+model Setting {
+  key       String   @id
+  value     String
+  updatedAt DateTime @updatedAt
+}

@@ -45,8 +45,9 @@ async function main() {
 
   const shades = await db.shade.findMany({ where: { tryOn: true, active: true }, select: { id: true, lineId: true } });
   const popular = shades.filter((_, i) => i % 9 === 0); // a few shades get most of the attention
+  type Ev = { eventId: string; type: string; sessionId: string; galleryId: string; createdAt: Date; lineId?: string; shadeId?: string; status?: string };
   const sessions = [];
-  const events = [];
+  const events: Ev[] = [];
   const now = Date.now();
   for (let day = 0; day < 35; day++) {
     for (const g of galleries) {

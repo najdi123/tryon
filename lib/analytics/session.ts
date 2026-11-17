@@ -50,9 +50,13 @@ export async function openSession(
   db: PrismaClient,
   args: { sessionCookie: string | undefined; visitorId: string; entry: Entry; isTest: boolean; now: Date },
 ): Promise<SessionRef> {
-  const { sessionCookie, visitorId, entry, isTest, now } = args;
+  const { sessionCookie, visitorId, entry, isTest } = args;
   return db.$transaction(async (tx) => {
     await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended(${visitorId}, 0))`;
+    // The clock is read after the wait. A request that queued behind another would otherwise
+    // carry an older time than the session the first one just touched, look like a session
+    // "from the future", and open a second session.
+    const now = new Date(Math.max(args.now.getTime(), Date.now()));
     // The cookie names the session; a cookie from another browser id is not trusted, and a
     // missing one falls back to this browser's latest session.
     let row = sessionCookie ? await tx.session.findUnique({ where: { id: sessionCookie } }) : null;

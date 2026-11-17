@@ -45,3 +45,6 @@ next-env.d.ts
 
 # on-device model files, built by scripts/mediapipe-assets.mjs
 /public/mediapipe/
+
+# generated panel passwords
+panel-password-*.txt

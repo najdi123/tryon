@@ -167,3 +167,105 @@ body {
     animation-duration: 1.6s !important;
   }
 }
+
+/* ─── The staff panel: plum and gold on cream (the reference dashboard). ─── */
+.admin {
+  --plum: #4a1532;
+  --plum-2: #5f2143;
+  --plum-soft: #8b5a74;
+  --gold: #96702e;
+  --gold-fill: #b08a45;
+  --gold-soft: #ecdfc6;
+  --cream: #faf6f0;
+  --card: #ffffff;
+  --a-ink: #2b1a22;
+  --a-ink-2: #5e4c55;
+  --a-ink-3: #86757d;
+  --a-line: #e4d9ca;
+  --a-danger: #a3262c;
+  --a-ok: #2f6b3f;
+  background: var(--cream);
+  color: var(--a-ink);
+  min-height: 100dvh;
+}
+.admin a {
+  color: inherit;
+}
+.a-card {
+  background: var(--card);
+  border: 1px solid var(--a-line);
+  border-radius: 14px;
+}
+.a-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 44px;
+  padding-inline: 18px;
+  border-radius: 10px;
+  font-weight: 700;
+  font-size: 14px;
+  white-space: nowrap;
+}
+.a-btn-gold {
+  background: var(--gold);
+  color: #fff;
+}
+.a-btn-plum {
+  background: var(--plum);
+  color: #fff;
+}
+.a-btn-line {
+  background: var(--card);
+  color: var(--a-ink);
+  border: 1px solid var(--plum-soft);
+}
+.a-btn:disabled {
+  opacity: 0.55;
+}
+.a-input {
+  min-height: 44px;
+  width: 100%;
+  border: 1px solid var(--a-line);
+  border-radius: 10px;
+  background: var(--card);
+  padding-inline: 12px;
+  font-size: 14px;
+  color: var(--a-ink);
+}
+.a-label {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--a-ink-2);
+}
+.a-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+.a-table th {
+  background: var(--gold-soft);
+  color: var(--a-ink);
+  font-weight: 700;
+  text-align: start;
+  padding: 10px 14px;
+  white-space: nowrap;
+}
+.a-table td {
+  padding: 10px 14px;
+  border-top: 1px solid var(--a-line);
+}
+.a-table .n {
+  font-variant-numeric: tabular-nums;
+  text-align: start;
+}
+.a-scroll {
+  overflow-x: auto;
+}
+.admin :focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 2px;
+}

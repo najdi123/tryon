@@ -16,7 +16,7 @@ Last updated: 17 November 2026.
 |---|---|---|
 | 0 | Setup, database, official catalogue | Done |
 | 1 | QR links, sessions, events | Done, reviewed, fixes in |
-| 2 | The three customer screens, the picture engine | Built, reviewed, fixes in; colour check being added |
+| 2 | The three customer screens, the picture engine | Built, reviewed, fixes in; colour check built and walked on real previews |
 | 3 | The staff panel, reports, Excel export | Not started |
 | 4 | The brief's tests, then delivery to the test site | Not started |
 | 5 | Later features (live camera, hairstyles, highlight, ombre, balayage) | After the base version |
@@ -81,10 +81,18 @@ What happens to every picture the image service makes:
 1. The phone measures the hair colour in the picture against the shade's colour.
 2. **Close enough:** shown as it came.
 3. **A bit off** (typically too dark): corrected on the phone by arithmetic on the hair pixels.
-   No second picture, no extra cost, no second AI.
+   No second picture, no extra cost, no second AI. The correction is deliberately small: half
+   way to the shade's colour, within tight limits.
 4. **Far off, or the hair did not change:** one new picture is requested, asking for a colour moved
    to compensate for the miss. One retry only.
 5. **Still wrong:** the customer is told this shade could not be previewed on this photo.
+
+The first build moved the hair all the way to the shade's colour. Tested on real previews it looked
+painted, and where the catalogue's colour was itself an estimate (9/3 came out yellow) it made the
+picture worse. So the model does the colouring and the correction only trims.
+
+When the on-device model has not loaded, the colour cannot be measured and the picture is shown
+unchecked (recorded as such).
 
 A try-on counts as a success only when the phone kept the picture (steps 2, 3 or a good retry).
 The rules and their numbers are in `lib/colour/judge.ts`, with tests.

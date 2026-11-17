@@ -8,7 +8,7 @@ The brief is two Word documents by Ali Shafiei (16 November 2026) with four refe
 This file is the working plan: what was decided, what is built, what is left. It is updated when a
 phase moves or a decision is made.
 
-Last updated: 18 November 2026.
+Last updated: 17 November 2026 (Phase 4 tests).
 
 ## Where things stand
 
@@ -18,11 +18,12 @@ Last updated: 18 November 2026.
 | 1 | QR links, sessions, events | Done, reviewed, fixes in |
 | 2 | The three customer screens, the picture engine | Built, reviewed, fixes in; colour check built and walked on real previews |
 | 3 | The staff panel, reports, Excel export | Built, reviewed, fixes in, walked as admin and viewer |
-| 4 | The brief's tests, then delivery to the test site | Not started |
+| 4 | The brief's tests, then delivery to the test site | Tests done and passing, setup guide and nginx file written (`TESTS.md`, `README.md`, `deploy/`). Deployment waits for Ali's yes |
 | 5 | Later features (live camera, hairstyles, highlight, ombre, balayage) | After the base version |
 
 The live site (zibarokh.rukhat.com) still serves the old app. Nothing new is deployed there.
 A stopped test copy of the new code is on the server at `/root/qr-tryon-stage`, port 3018.
+The delivery tests use their own database, `ayeneh_test`, and the same copy started on port 3019.
 
 ## Decisions
 
@@ -147,10 +148,9 @@ Rough prices per picture from third-party lists (not Google's own page): Lite ab
 ## What is left
 
 ### Before the base version is done
-- **Phase 4:** the tests the brief lists (QR to output, back navigation, duplicate events, Tehran
-  day boundary, card totals equal tables, filter combinations, shared codes across lines,
-  unauthorized access, Excel equals screen); a setup guide; deploy to the test site with
-  `PUBLIC_BASE_URL` set and nginx rate limits on the events, try-on and staff login addresses.
+- **Deployment (needs Ali's yes, it replaces the old site):** update `/root/qr-tryon` to `main`,
+  `npm ci`, build, add `PUBLIC_BASE_URL` to its settings, restart, install
+  `deploy/nginx-zibarokh.conf`, create the real admin, remove the two stage logins.
 - **A real phone test:** camera, saving the labelled picture, share. Not possible from a desk.
 - **Real photos:** every test so far used computer-made faces.
 
@@ -181,5 +181,6 @@ Rough prices per picture from third-party lists (not Google's own page): Lite ab
 - Stack: Next.js 16, Tailwind 4, Prisma 7 on PostgreSQL 16. No Docker.
 - Server: Servitro. Live app in `/root/qr-tryon` (pm2 `qr-tryon`, port 3008, nginx site
   `zibarokh-rukhat`). Database `ayeneh` on the same box. Secrets live only in `.env.local` there.
-- Checks: `npm test` (rule tests), `npx tsc --noEmit`, `npx eslint`.
+- Checks: `npm test` (rule tests), `npx tsc --noEmit`, `npx eslint`. The delivery tests and their
+  results are in `TESTS.md`; how to install and run is in `README.md`.
 - After `npm install`: `npm run assets` puts the on-device model under `public/mediapipe`.

@@ -1,13 +1,14 @@
 import type { Metadata } from "next";
-import { Vazirmatn } from "next/font/google";
+import localFont from "next/font/local";
 import "./globals.css";
 
-// Self-hosted at build time by next/font — no Google Fonts CDN request at
-// runtime, which matters for an Iran-facing site.
-const vazirmatn = Vazirmatn({
+// The font file lives in the project (app/fonts, SIL Open Font License), so neither the build
+// nor a customer's phone asks Google for it.
+const vazirmatn = localFont({
+  src: "./fonts/Vazirmatn-wght.woff2",
   variable: "--font-vazirmatn",
-  subsets: ["arabic", "latin"],
-  weight: ["300", "400", "500", "600", "700"],
+  weight: "100 900",
+  display: "swap",
 });
 
 export const metadata: Metadata = {

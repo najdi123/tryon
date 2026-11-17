@@ -3,6 +3,7 @@
 // "_test". The app under test must be started on the same test database.
 //   DATABASE_URL=<...ayeneh_test> npx tsx scripts/acceptance.ts http://127.0.0.1:3019
 import { createHash, randomBytes, randomUUID } from "node:crypto";
+import { request } from "node:http";
 import ExcelJS from "exceljs";
 import { config } from "dotenv";
 
@@ -22,26 +23,46 @@ function check(name: string, got: unknown, want: unknown) {
   results.push({ group, name, ok: a === b, detail: a === b ? "" : `got ${a}, expected ${b}` });
 }
 
-// A browser, as far as the server can tell: a user agent and a cookie jar.
+// A browser, as far as the server can tell: a user agent, its request headers and a cookie jar.
+// Sent with node:http, because fetch writes its own sec-fetch headers.
+type Reply = { status: number; location: string | null; body: Buffer; text(): string; json(): unknown };
 class Browser {
   jar = new Map<string, string>();
   constructor(public ua: string = PHONE_UA) {}
-  async go(path: string, init: { method?: string; headers?: Record<string, string>; body?: BodyInit } = {}) {
+  async go(path: string, init: { method?: string; headers?: Record<string, string>; body?: string | FormData } = {}): Promise<Reply> {
     const cookie = [...this.jar].map(([k, v]) => `${k}=${v}`).join("; ");
-    const res = await fetch(BASE + path, {
-      method: init.method ?? "GET",
-      redirect: "manual",
-      body: init.body,
-      headers: { "user-agent": this.ua, ...(cookie ? { cookie } : {}), ...init.headers },
+    const headers: Record<string, string> = { "user-agent": this.ua, ...(cookie ? { cookie } : {}), ...init.headers };
+    let payload: Buffer | null = null;
+    if (init.body instanceof FormData) {
+      const packed = new Response(init.body);
+      headers["content-type"] = packed.headers.get("content-type") ?? "";
+      payload = Buffer.from(await packed.arrayBuffer());
+    } else if (typeof init.body === "string") payload = Buffer.from(init.body);
+    if (payload) headers["content-length"] = String(payload.length);
+    return new Promise<Reply>((resolve, reject) => {
+      const req = request(BASE + path, { method: init.method ?? "GET", headers, timeout: 60_000 }, (res) => {
+        const chunks: Buffer[] = [];
+        res.on("data", (c: Buffer) => chunks.push(c));
+        res.on("end", () => {
+          for (const line of res.headers["set-cookie"] ?? []) {
+            const [pair] = line.split(";");
+            const i = pair.indexOf("=");
+            const value = pair.slice(i + 1);
+            if (value === "" || /max-age=0/i.test(line)) this.jar.delete(pair.slice(0, i));
+            else this.jar.set(pair.slice(0, i), value);
+          }
+          const body = Buffer.concat(chunks);
+          resolve({
+            status: res.statusCode ?? 0, location: res.headers.location ?? null, body,
+            text: () => body.toString("utf8"),
+            json: () => { try { return JSON.parse(body.toString("utf8")) as unknown; } catch { return {}; } },
+          });
+        });
+      });
+      req.on("timeout", () => req.destroy(new Error(`timeout on ${path}`)));
+      req.on("error", reject);
+      req.end(payload ?? undefined);
     });
-    for (const line of res.headers.getSetCookie()) {
-      const [pair] = line.split(";");
-      const i = pair.indexOf("=");
-      const value = pair.slice(i + 1);
-      if (value === "" || /max-age=0/i.test(line)) this.jar.delete(pair.slice(0, i));
-      else this.jar.set(pair.slice(0, i), value);
-    }
-    return res;
   }
   event(body: Record<string, unknown>) {
     return this.go("/api/events", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) });
@@ -197,7 +218,7 @@ async function main() {
   group = "QR to output";
   const p = new Browser();
   const open = await p.go(`/q/${token1}`, { headers: NAV });
-  check("the QR link opens the app", [open.status, open.headers.get("location")], [307, "/"]);
+  check("the QR link opens the app", [open.status, open.location], [307, "/"]);
   const vid = p.jar.get("ar_vid") ?? "";
   let mine = await rows(vid);
   if (mine.length === 0) throw new Error(`the app at ${BASE} is not using the test database (no session appeared): stopped`);
@@ -206,7 +227,7 @@ async function main() {
   await p.go(`/q/${token1}`, { headers: NAV });
   mine = await rows(vid);
   check("opening the link again is not a second entry", [mine.length, count(mine[0], "QR_LANDING")], [1, 1]);
-  check("the app is told its gallery", (await (await p.go("/api/session")).json()).gallery, { name: G1.name, city: G1.city });
+  check("the app is told its gallery", ((await p.go("/api/session")).json() as { gallery: unknown }).gallery, { name: G1.name, city: G1.city });
   const send = async (type: string, extra: Record<string, unknown> = {}) => (await p.event({ eventId: randomUUID(), type, ...extra })).status;
   const flow = [
     await send("BRAND_SELECTED", { lineKey: LA }), await send("PHOTO_READY"), await send("SHADE_SELECTED", { lineKey: LA, shadeCode: AX.code }),
@@ -275,7 +296,7 @@ async function main() {
   group = "Events the server refuses";
   const e = async (body: Record<string, unknown>, b: Browser = p) => {
     const r = await b.event({ eventId: randomUUID(), ...body });
-    return [r.status, r.status === 200 ? "" : ((await r.json().catch(() => ({}))) as { error?: string }).error ?? ""];
+    return [r.status, r.status === 200 ? "" : (r.json() as { error?: string }).error ?? ""];
   };
   check("a browser cannot claim a picture the server made", await e({ type: "TRYON_SUCCEEDED", lineKey: LA, shadeCode: AX.code, status: "ai" }), [400, "server_event"]);
   check("nor a try-on with no status", await e({ type: "TRYON_SUCCEEDED", lineKey: LA, shadeCode: AX.code }), [400, "server_event"]);
@@ -294,7 +315,7 @@ async function main() {
     fd.set("image", jpeg, "p.jpg"); fd.set("lineKey", LA); fd.set("shadeCode", AX.code); fd.set("attemptId", randomUUID());
     if (consent) fd.set("consent", "yes");
     const r = await b.go("/api/tryon", { method: "POST", body: fd });
-    return [r.status, ((await r.json().catch(() => ({}))) as { error?: string }).error ?? ""];
+    return [r.status, (r.json() as { error?: string }).error ?? ""];
   };
   const engineOn = (await tryOn(p, false))[0] !== 503;
   if (engineOn) {
@@ -324,7 +345,9 @@ async function main() {
   forged.jar.set("ar_admin", randomBytes(32).toString("base64url"));
   const to = async (b: Browser, path: string) => {
     const r = await b.go(path);
-    return r.status >= 300 && r.status < 400 ? new URL(r.headers.get("location") ?? "", BASE).pathname + new URL(r.headers.get("location") ?? "", BASE).search : String(r.status);
+    if (r.status < 300 || r.status >= 400) return String(r.status);
+    const u = new URL(r.location ?? "", BASE);
+    return u.pathname + u.search;
   };
   const PAGES = ["/admin", "/admin/galleries", "/admin/shades", "/admin/catalog", "/admin/settings", "/admin/galleries/new", `/admin/galleries/${G1.id}`];
   for (const [label, b] of [["no login", nobody], ["a made-up login cookie", forged], ["an expired login", await staff("at-expired", "ADMIN", { expired: true })], ["a switched-off user", await staff("at-off", "ADMIN", { active: false })]] as const) {
@@ -347,7 +370,7 @@ async function main() {
   async function excel(path: string) {
     const r = await admin.go(path);
     const wb = new ExcelJS.Workbook();
-    await wb.xlsx.load(await r.arrayBuffer());
+    await wb.xlsx.load(r.body as unknown as ArrayBuffer);
     const out: string[][] = [];
     wb.worksheets[0].eachRow((row) => out.push((row.values as unknown[]).slice(1).map((c) => (c === null || c === undefined ? "" : String(c)))));
     const head = out.findIndex((r2) => r2.length > 3);
@@ -357,7 +380,7 @@ async function main() {
   for (const [label, query] of [["no filter", ""], ["province", `&province=${encodeURIComponent("تهران")}`], ["brand", `&line=${LA}`], ["unknown origin", "&gallery=__unknown__"]] as const) {
     const xs = await excel(`/admin/export?report=shades&${range}${query}`);
     const total = xs.body.at(-1) ?? [];
-    const screen = screenRows(await (await admin.go(`/admin/shades?${range}${query}`)).text());
+    const screen = screenRows((await admin.go(`/admin/shades?${range}${query}`)).text());
     // screen and file: rank, line, code, name, selections, successes (the last column is a percentage, formatted differently)
     check(`shades, ${label}: the file's rows are the screen's rows`, xs.body.slice(0, -1).map((r) => key(r.slice(0, 6))), screen.map((r) => key(r.slice(0, 6))));
     const f = parseFilters(Object.fromEntries(new URLSearchParams(`${range}${query}`)), now);
@@ -366,7 +389,7 @@ async function main() {
 
     const xg = await excel(`/admin/export?report=galleries&${range}${query}`);
     const gTotal = xg.body.at(-1) ?? [];
-    const gScreen = screenRows(await (await admin.go(`/admin/galleries?${range}${query}`)).text());
+    const gScreen = screenRows((await admin.go(`/admin/galleries?${range}${query}`)).text());
     // file: rank, name, id, province, city, status, entries, sessions, successes. screen: rank, name, id, province+city, status, entries, sessions, successes
     check(`galleries, ${label}: the file's rows are the screen's rows`,
       xg.body.slice(0, -1).map((r) => key([r[0], r[1], r[2], r[5], r[6], r[7], r[8]])), gScreen.map((r) => key([r[0], r[1], r[2], r[4], r[5], r[6], r[7]])));
@@ -381,7 +404,7 @@ async function main() {
   check("the file states its range, filters and time of making",
     [intro.includes("تهران"), intro.includes(AX.line.nameFa), intro.includes("AT"), stated.intro.length >= 4], [true, true, true, true]);
   check("a search and a status filter change the file as they change the screen",
-    stated.body.slice(0, -1).map((r) => r[2]), screenRows(await (await admin.go(`/admin/galleries?${range}&province=${encodeURIComponent("تهران")}&line=${LA}&status=ACTIVE&q=AT`)).text()).map((r) => r[2]));
+    stated.body.slice(0, -1).map((r) => r[2]), screenRows((await admin.go(`/admin/galleries?${range}&province=${encodeURIComponent("تهران")}&line=${LA}&status=ACTIVE&q=AT`)).text()).map((r) => r[2]));
 
   // ─── The result ───────────────────────────────────────────────────────────
   let last = "";

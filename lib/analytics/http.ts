@@ -36,5 +36,6 @@ export async function sessionForRequest(req: NextRequest, res: NextResponse, ent
 // Analytics must never stop the product: a failure is logged and the caller carries on.
 export function logAnalyticsFailure(where: string, e: unknown): void {
   // The server's only log line when the analytics database is unreachable.
-  console.error(`[analytics] ${where}: ${e instanceof Error ? e.message : String(e)}`);
+  const code = typeof e === "object" && e !== null ? ((e as { code?: string }).code ?? "") : "";
+  console.error(`[analytics] ${where}: ${code} ${e instanceof Error ? e.name + " " + e.message.slice(0, 300) : String(e)}`);
 }

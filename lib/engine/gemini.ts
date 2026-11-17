@@ -23,6 +23,7 @@ type Part = { inlineData?: { mimeType?: string; data?: string } };
 
 export const geminiEngine: HairEngine = {
   name: `gemini:${MODEL}`,
+  available: () => Boolean(process.env.GEMINI_API_KEY),
   async recolor(req: RecolorRequest): Promise<RecolorResult> {
     const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) return { ok: false, reason: "not_configured" };
@@ -36,13 +37,22 @@ export const geminiEngine: HairEngine = {
           // temperature 0: the most faithful to the photo.
           generationConfig: { responseModalities: ["IMAGE"], temperature: 0 },
         }),
-        signal: AbortSignal.timeout(90_000),
+        signal: req.signal,
       });
     } catch {
       return { ok: false, reason: "unreachable" };
     }
-    if (!upstream.ok) return { ok: false, reason: "rejected" };
-    const data = (await upstream.json()) as { candidates?: Array<{ content?: { parts?: Part[] } }> };
+    if (!upstream.ok) {
+      // The status alone tells quota (429), a bad key (400/403) and an outage apart. No body is logged.
+      console.error(`[engine] gemini answered ${upstream.status}`);
+      return { ok: false, reason: "rejected" };
+    }
+    let data: { candidates?: Array<{ content?: { parts?: Part[] } }> };
+    try {
+      data = (await upstream.json()) as typeof data;
+    } catch {
+      return { ok: false, reason: "unreachable" }; // cut off mid-answer
+    }
     const part = (data.candidates?.[0]?.content?.parts ?? []).find((p) => p.inlineData?.data);
     if (!part?.inlineData?.data) return { ok: false, reason: "no_image" }; // refused, or text only
     return { ok: true, imageDataUrl: `data:${part.inlineData.mimeType ?? "image/png"};base64,${part.inlineData.data}` };

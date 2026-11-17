@@ -54,7 +54,7 @@ export function ShadePicker({ line, selected, onSelect }: Props) {
       </div>
 
       {shades.length === 0 ? (
-        <p className="py-6 text-center text-sm text-ink-3">{COPY.noMatch}</p>
+        <p className="py-6 text-center text-sm text-ink-3">{line.shades.length === 0 ? COPY.emptyLine : COPY.noMatch}</p>
       ) : (
         <ul className="scroll-x -mx-4 flex gap-1 px-4 pb-1">
           {shades.map((s) => {
@@ -63,7 +63,7 @@ export function ShadePicker({ line, selected, onSelect }: Props) {
               <li key={s.code}>
                 <button type="button" aria-pressed={on} onClick={() => onSelect(s)} className="flex w-[84px] flex-col items-center gap-1 rounded-2xl px-1 py-2">
                   <span className={`grid size-[68px] place-items-center rounded-full border-[3px] ${on ? "border-teal" : "border-transparent"}`}>
-                    <HairLock hex={s.hex} size={44} seed={`${line.key}-${s.code}`} />
+                    <HairLock hex={s.hex} size={44} strands={40} seed={`${line.key}-${s.code}`} />
                   </span>
                   <span dir="ltr" className="num text-[15px] font-bold text-ink">{s.code}</span>
                   <span className={`line-clamp-2 text-center text-[12px] leading-4 ${on ? "font-bold text-ink" : "text-ink-2"}`}>{s.nameFa}</span>

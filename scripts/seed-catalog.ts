@@ -62,6 +62,8 @@ async function main() {
         data: { hex: shadeHex(line.key, sh.familyKey, sh.code), colorDescription: `${sh.nameEn.toLowerCase()} hair colour` },
       });
     }
+    const blind = await db.shade.findMany({ where: { lineId: row.id, tryOn: true, hex: null }, select: { code: true } });
+    if (blind.length) process.stdout.write(`  WARNING, try-on shades with no colour (hidden from customers): ${blind.map((b) => b.code).join(", ")}\n`);
     const n = await db.shade.count({ where: { lineId: row.id } });
     process.stdout.write(`${line.key}: ${n} shades\n`);
   }

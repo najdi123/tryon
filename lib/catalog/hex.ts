@@ -9,7 +9,7 @@ const LEVEL: Record<number, string> = {
 // tone → [tint colour, how much of it]
 const TONE: Record<string, [string, number]> = {
   none: ["#000000", 0],
-  ash: ["#8c8a86", 0.35], smoky: ["#857c78", 0.35], matt: ["#7d7a5a", 0.3], violet: ["#6b3a66", 0.42],
+  ash: ["#8c8a86", 0.35], smoky: ["#857c78", 0.35], matt: ["#7d7a5a", 0.3], violet: ["#5b2f8a", 0.55],
   golden: ["#c9973a", 0.35], goldenStrong: ["#cf9a2e", 0.5], sand: ["#c8b48a", 0.3], copper: ["#b5562a", 0.5],
   copperStrong: ["#c8571f", 0.65], mahogany: ["#6e2a35", 0.5], red: ["#a01f2a", 0.55], redStrong: ["#b51c2b", 0.75],
   cocoa: ["#6a5145", 0.35], tobacco: ["#7a5230", 0.35], nacre: ["#c9bfc4", 0.35], honey: ["#c98b3c", 0.4],
@@ -70,11 +70,4 @@ export function shadeHex(lineKey: string, familyKey: string, code: string): stri
   const [tint, amount] = TONE[toneKey];
   // A tint shows more on light hair than on dark.
   return mix(LEVEL[level], tint, amount * (0.6 + level * 0.04));
-}
-
-// Dark targets can be previewed on the phone itself; lighter ones need the image service,
-// because lightening dark hair cannot be done by tinting pixels.
-export function shadeEngine(code: string): "local" | "ai" {
-  const level = shadeLevel(code);
-  return level !== null && level <= 4 ? "local" : "ai";
 }

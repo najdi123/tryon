@@ -26,29 +26,34 @@ export function CompareSlider({ before, after, busy }: { before: string; after: 
       onPointerCancel={() => { dragging.current = false; }}
     >
       {/* eslint-disable-next-line @next/next/no-img-element -- local data URL of the customer's photo */}
-      <img src={before} alt="عکس شما، قبل از تغییر رنگ" draggable={false} className="block h-auto w-full" />
+      <img src={before} alt={COPY.beforeAlt} draggable={false} className="block h-auto w-full" />
       {after && (
         <>
           {/* eslint-disable-next-line @next/next/no-img-element -- local data URL of the preview */}
-          <img src={after} alt="پیش‌نمایش رنگ جدید" draggable={false} className="absolute inset-0 size-full object-cover" style={{ clipPath: `inset(0 ${100 - pos}% 0 0)` }} />
+          <img src={after} alt={COPY.afterAlt} draggable={false} className="absolute inset-0 size-full object-cover" style={{ clipPath: `inset(0 ${100 - pos}% 0 0)` }} />
           <div className="absolute inset-y-0 w-0.5 bg-white" style={{ left: `${pos}%` }} />
-          <button
-            type="button"
+          <div
             role="slider"
-            aria-label="مقایسه قبل و بعد"
+            tabIndex={0}
+            aria-label={COPY.compareLabel}
             aria-valuemin={0}
             aria-valuemax={100}
             aria-valuenow={Math.round(pos)}
-            onKeyDown={(e) => { if (e.key === "ArrowLeft") setPos((p) => Math.max(4, p - 5)); if (e.key === "ArrowRight") setPos((p) => Math.min(96, p + 5)); }}
+            onKeyDown={(e) => {
+              if (e.key === "ArrowLeft") setPos((p) => Math.max(4, p - 5));
+              if (e.key === "ArrowRight") setPos((p) => Math.min(96, p + 5));
+              if (e.key === "Home") setPos(4);
+              if (e.key === "End") setPos(96);
+            }}
             className="absolute top-[72%] grid size-11 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full bg-white text-ink shadow-md"
             style={{ left: `${pos}%` }}
           >
             <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor" aria-hidden><path d="M8 5 3 10l5 5V5Zm4 0v10l5-5-5-5Z" /></svg>
-          </button>
-          <span className="absolute left-3 top-3 rounded-full bg-teal px-3 py-1 text-sm font-bold text-white">{COPY.after}</span>
+          </div>
+          {pos > 22 && <span className="absolute left-3 top-3 rounded-full bg-teal px-3 py-1 text-sm font-bold text-white">{COPY.after}</span>}
         </>
       )}
-      <span className="absolute right-3 top-3 rounded-full bg-ink/70 px-3 py-1 text-sm font-bold text-white">{COPY.before}</span>
+      {(!after || pos < 78) && <span className="absolute right-3 top-3 rounded-full bg-ink/70 px-3 py-1 text-sm font-bold text-white">{COPY.before}</span>}
       {busy && (
         <div className="absolute inset-0 grid place-items-center bg-white/65">
           <div className="flex flex-col items-center gap-3 text-ink"><span className="spinner" /><span className="text-sm font-medium">{COPY.working}</span></div>

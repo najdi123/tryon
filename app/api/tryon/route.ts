@@ -1,27 +1,32 @@
-import { randomUUID } from "node:crypto";
 import { NextResponse, type NextRequest } from "next/server";
 import { db } from "@/lib/db";
 import { hasVisitor, logAnalyticsFailure, sessionForRequest } from "@/lib/analytics/http";
-import { isBotUserAgent, type ClientEventType } from "@/lib/analytics/rules";
-import { recordEvent } from "@/lib/analytics/session";
+import { isBotUserAgent } from "@/lib/analytics/rules";
+import { finishAiTryOn, startAiTryOn, type SessionRef } from "@/lib/analytics/session";
 import { hairEngine } from "@/lib/engine";
 
 export const dynamic = "force-dynamic";
-export const maxDuration = 120;
 
-const MAX_BYTES = 8 * 1024 * 1024;
+const MAX_BYTES = 2 * 1024 * 1024; // the app sends a 1280 px JPEG, well under this
+const MAX_BODY = MAX_BYTES + 200 * 1024;
 const ALLOWED_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
-const MAX_AI_TRYONS_PER_DAY = 30; // per browser: bounds the cost one visitor can cause
+const PER_VISITOR_PER_DAY = Number(process.env.AI_TRYONS_PER_VISITOR_PER_DAY ?? 30);
+const SITE_WIDE_PER_DAY = Number(process.env.AI_TRYONS_SITE_PER_DAY ?? 2000); // the real bound on cost
+const ENGINE_LIMIT_MS = 50_000; // under the proxy's 60 s, so the customer always gets our answer
 
 function fail(error: string, status: number) {
   return NextResponse.json({ error }, { status });
 }
 
-// Makes one preview with the image service. The photo is held in memory for the call and
-// is not stored. The server writes the try-on events itself, so a success cannot be faked.
+// Makes one preview with the image service. The photo is held in memory for the call and is not
+// stored. The server writes the try-on events itself, so a success cannot be faked, and it counts
+// a success only when the answer was still wanted.
 export async function POST(req: NextRequest) {
   if (isBotUserAgent(req.headers.get("user-agent"))) return fail("forbidden", 403);
+  const engine = hairEngine();
+  if (!engine.available()) return fail("not_configured", 503); // said before any photo is read
   if (!hasVisitor(req)) return fail("no_session", 409);
+  if (Number(req.headers.get("content-length") ?? 0) > MAX_BODY) return fail("image_too_large", 413);
   let form: FormData;
   try {
     form = await req.formData();
@@ -31,14 +36,20 @@ export async function POST(req: NextRequest) {
   const image = form.get("image");
   const lineKey = String(form.get("lineKey") ?? "");
   const shadeCode = String(form.get("shadeCode") ?? "");
+  const attemptId = String(form.get("attemptId") ?? "");
   if (form.get("consent") !== "yes") return fail("consent_required", 400);
+  if (!/^[A-Za-z0-9-]{8,48}$/.test(attemptId)) return fail("bad_request", 400);
   if (!(image instanceof File) || !ALLOWED_TYPES.has(image.type)) return fail("bad_image", 400);
   if (image.size > MAX_BYTES) return fail("image_too_large", 413);
 
-  let session: { id: string; galleryId: string | null };
+  let session: SessionRef;
   let target: { lineId: string; shadeId: string };
   let shade: { nameEn: string; hex: string; description: string | null };
-  const res = NextResponse.json({});
+  const cookies = NextResponse.json({});
+  const withCookies = (res: NextResponse) => {
+    for (const c of cookies.cookies.getAll()) res.cookies.set(c);
+    return res;
+  };
   try {
     const row = await db.shade.findFirst({
       where: { code: shadeCode, active: true, tryOn: true, hex: { not: null }, line: { key: lineKey, active: true } },
@@ -46,33 +57,34 @@ export async function POST(req: NextRequest) {
     if (!row || !row.hex) return fail("unknown_shade", 400);
     target = { lineId: row.lineId, shadeId: row.id };
     shade = { nameEn: row.nameEn, hex: row.hex, description: row.colorDescription };
-    session = await sessionForRequest(req, res, { kind: "direct" });
-    const since = new Date(Date.now() - 24 * 60 * 60 * 1000);
-    const used = await db.analyticsEvent.count({
-      where: { type: "TRYON_STARTED", status: "ai", createdAt: { gte: since }, session: { visitorId: req.cookies.get("ar_vid")?.value } },
+    session = await sessionForRequest(req, cookies, { kind: "direct" });
+    const start = await startAiTryOn(db, {
+      session, target, eventId: `${attemptId}_s`, perVisitor: PER_VISITOR_PER_DAY, siteWide: SITE_WIDE_PER_DAY, now: new Date(),
     });
-    if (used >= MAX_AI_TRYONS_PER_DAY) return fail("daily_limit", 429);
+    if (!start.ok) return withCookies(fail(start.reason, 429));
   } catch (e) {
     logAnalyticsFailure("tryon", e);
     return fail("unavailable", 503);
   }
 
-  const write = async (type: ClientEventType, status: string) => {
+  const finish = async (type: "TRYON_SUCCEEDED" | "TRYON_FAILED", status: string) => {
     try {
-      await recordEvent(db, session, { eventId: randomUUID(), type, lineKey, shadeCode, status }, target, new Date());
+      await finishAiTryOn(db, { session, target, eventId: `${attemptId}_${type === "TRYON_SUCCEEDED" ? "ok" : "f"}`, type, status, now: new Date() });
     } catch (e) {
       logAnalyticsFailure("tryon-event", e);
     }
   };
-  await write("TRYON_STARTED", "ai");
   const base64 = Buffer.from(await image.arrayBuffer()).toString("base64");
-  const result = await hairEngine().recolor({ image: { mimeType: image.type, base64 }, shade });
-  if (!result.ok) {
-    await write("TRYON_FAILED", result.reason);
-    return fail(result.reason, result.reason === "not_configured" ? 503 : 502);
+  const signal = AbortSignal.any([req.signal, AbortSignal.timeout(ENGINE_LIMIT_MS)]);
+  const result = await engine.recolor({ image: { mimeType: image.type, base64 }, shade, signal });
+  if (req.signal.aborted) {
+    await finish("TRYON_FAILED", "client_gone"); // nobody received it: not a success
+    return withCookies(fail("failed", 499));
   }
-  await write("TRYON_SUCCEEDED", "ai");
-  const out = NextResponse.json({ image: result.imageDataUrl });
-  for (const c of res.cookies.getAll()) out.cookies.set(c);
-  return out;
+  if (!result.ok) {
+    await finish("TRYON_FAILED", result.reason);
+    return withCookies(fail(result.reason, 502));
+  }
+  await finish("TRYON_SUCCEEDED", "ai");
+  return withCookies(NextResponse.json({ image: result.imageDataUrl }));
 }

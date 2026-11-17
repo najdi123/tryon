@@ -42,3 +42,6 @@ next-env.d.ts
 
 # prisma client, generated
 /lib/generated/
+
+# on-device model files, built by scripts/mediapipe-assets.mjs
+/public/mediapipe/

@@ -38,7 +38,10 @@ export async function resolveQrToken(db: PrismaClient, token: string): Promise<E
   return { kind: "qr", galleryId: row.galleryId, qrTokenId: row.id };
 }
 
-export type SessionRef = { id: string; galleryId: string | null; created: boolean };
+// Requests from one browser queue behind each other; they wait for the lock rather than fail.
+const TX = { maxWait: 15_000, timeout: 20_000 };
+
+export type SessionRef = { id: string; galleryId: string | null; visitorId: string; created: boolean };
 
 // Finds or starts the session for this request and writes the server's own events.
 // One visitor's requests are taken one at a time (an advisory lock on the browser id), so two
@@ -63,7 +66,7 @@ export async function openSession(
         where: { id: d.id },
         data: { lastSeenAt: now, ...(isTest ? { isTest: true } : {}) }, // staff who sign in later still count as test
       });
-      return { id: d.id, galleryId: prev?.galleryId ?? null, created: false };
+      return { id: d.id, galleryId: prev?.galleryId ?? null, visitorId, created: false };
     }
     if (d.carried && d.galleryId) {
       // A gallery switched off since the scan gets no new sessions.
@@ -93,8 +96,8 @@ export async function openSession(
         },
       },
     });
-    return { id: s.id, galleryId: s.galleryId, created: true };
-  });
+    return { id: s.id, galleryId: s.galleryId, visitorId, created: true };
+  }, TX);
 }
 
 export type EventInput = {
@@ -157,4 +160,69 @@ export async function recordEvent(
     throw e;
   }
   return { ok: true, duplicate: false };
+}
+
+export type AiStart = { ok: true } | { ok: false; reason: "daily_limit" | "busy" };
+
+// Counts and records the start of one image-service preview in a single step, so parallel
+// requests cannot slip under the limits. Two limits: per browser per day, and for the whole
+// site per day (a browser id is only a cookie, so the site-wide ceiling is the real bound on cost).
+export async function startAiTryOn(
+  db: PrismaClient,
+  args: {
+    session: { id: string; galleryId: string | null; visitorId: string };
+    target: { lineId: string; shadeId: string };
+    eventId: string;
+    perVisitor: number;
+    siteWide: number;
+    now: Date;
+  },
+): Promise<AiStart> {
+  const { session, target, eventId, perVisitor, siteWide, now } = args;
+  const since = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+  return db.$transaction(async (tx) => {
+    await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended('ai-tryon-start', 0))`;
+    const started = { type: "TRYON_STARTED" as const, status: "ai", createdAt: { gte: since } };
+    const mine = await tx.analyticsEvent.count({ where: { ...started, session: { visitorId: session.visitorId } } });
+    if (mine >= perVisitor) return { ok: false, reason: "daily_limit" } as const;
+    const all = await tx.analyticsEvent.count({ where: started });
+    if (all >= siteWide) return { ok: false, reason: "busy" } as const;
+    try {
+      await tx.analyticsEvent.create({
+        data: {
+          eventId, type: "TRYON_STARTED", status: "ai", sessionId: session.id, galleryId: session.galleryId,
+          lineId: target.lineId, shadeId: target.shadeId, createdAt: now,
+        },
+      });
+    } catch (e) {
+      // The same attempt sent twice is one attempt: refuse the second call.
+      if (typeof e === "object" && e !== null && (e as { code?: string }).code === "P2002") return { ok: false, reason: "busy" } as const;
+      throw e;
+    }
+    return { ok: true } as const;
+  }, TX);
+}
+
+// The end of a preview the server made. Written outside the per-session event cap,
+// so a full session can never hide a result.
+export async function finishAiTryOn(
+  db: PrismaClient,
+  args: {
+    session: { id: string; galleryId: string | null };
+    target: { lineId: string; shadeId: string };
+    eventId: string;
+    type: "TRYON_SUCCEEDED" | "TRYON_FAILED";
+    status: string;
+    now: Date;
+  },
+): Promise<void> {
+  const { session, target, eventId, type, status, now } = args;
+  await db.analyticsEvent
+    .create({
+      data: { eventId, type, status, sessionId: session.id, galleryId: session.galleryId, lineId: target.lineId, shadeId: target.shadeId, createdAt: now },
+    })
+    .catch((e: unknown) => {
+      if (typeof e === "object" && e !== null && (e as { code?: string }).code === "P2002") return;
+      throw e;
+    });
 }

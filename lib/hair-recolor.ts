@@ -4,9 +4,9 @@
 
 import type { ImageSegmenter as ImageSegmenterType } from "@mediapipe/tasks-vision";
 
-const WASM_URL = "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.35/wasm";
-const MODEL_URL =
-  "https://storage.googleapis.com/mediapipe-models/image_segmenter/selfie_multiclass_256x256/float32/latest/selfie_multiclass_256x256.tflite";
+// Served by this app itself (scripts/mediapipe-assets.mjs): no foreign host is contacted.
+const WASM_URL = "/mediapipe/wasm";
+const MODEL_URL = "/mediapipe/selfie_multiclass_256x256.tflite";
 
 // Category index for hair in the selfie_multiclass_256x256 model
 const HAIR_IDX = 1;
@@ -30,6 +30,10 @@ export async function loadSegmenter(): Promise<ImageSegmenterType> {
     _seg = seg;
     return seg;
   })();
+  // A failed load is forgotten, so the next photo tries again.
+  _loading.catch(() => {
+    _loading = null;
+  });
   return _loading;
 }
 
@@ -223,10 +227,15 @@ export async function recolorHair(file: File, targetHex: string): Promise<Recolo
   };
 }
 
-// Returns true when the target shade requires significant lightening (bleaching),
-// which canvas recolor can't realistically simulate — Gemini handles it better.
-export function needsGemini(avgHairLightness: number, targetHex: string): boolean {
+// How much lighter the target is than the hair in the photo (0 to 1; negative: darker).
+export function lightnessGap(avgHairLightness: number, targetHex: string): number {
   const [tR, tG, tB] = hexToRgb(targetHex);
   const [, , tL] = rgbToHsl(tR, tG, tB);
-  return tL - avgHairLightness > 0.27;
+  return tL - avgHairLightness;
+}
+
+// True when the target needs real lightening, which tinting pixels on the phone cannot show:
+// past a small gap the on-device result turns to haze, so the image service makes it.
+export function needsGemini(avgHairLightness: number, targetHex: string): boolean {
+  return lightnessGap(avgHairLightness, targetHex) > 0.12;
 }

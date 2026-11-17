@@ -2,7 +2,7 @@
 
 import { useRef, useState } from "react";
 import { readPhoto, type ReadyPhoto } from "@/lib/client/photo";
-import { CAMERA_DENIED, COPY, PHOTO_PROBLEM } from "./copy";
+import { COPY, PHOTO_PROBLEM } from "./copy";
 import { IconArrowRight, IconCamera, IconFrame, IconImage } from "./icons";
 
 type Props = { photo: ReadyPhoto | null; onPhoto: (p: ReadyPhoto) => void; onContinue: () => void };
@@ -17,25 +17,15 @@ export function PhotoStep({ photo, onPhoto, onContinue }: Props) {
     if (!file) return;
     setBusy(true);
     setProblem(null);
-    const r = await readPhoto(file);
-    setBusy(false);
-    if (r.ok) onPhoto(r.photo);
-    else setProblem(PHOTO_PROBLEM[r.problem]);
-  }
-
-  // The selfie button opens the phone's camera. If the browser reports the camera as blocked,
-  // say so and leave the gallery button working.
-  async function openCamera() {
     try {
-      const state = await navigator.permissions?.query({ name: "camera" as PermissionName });
-      if (state?.state === "denied") {
-        setProblem(CAMERA_DENIED);
-        return;
-      }
+      const r = await readPhoto(file);
+      if (r.ok) onPhoto(r.photo);
+      else setProblem(PHOTO_PROBLEM[r.problem]);
     } catch {
-      // The permission cannot be read on this browser: the file input still works.
+      setProblem(PHOTO_PROBLEM.unreadable);
+    } finally {
+      setBusy(false);
     }
-    selfie.current?.click();
   }
 
   return (
@@ -50,7 +40,7 @@ export function PhotoStep({ photo, onPhoto, onContinue }: Props) {
           <div className="flex flex-col items-center gap-3 text-ink-2"><span className="spinner" /><span className="text-sm">{COPY.photoChecking}</span></div>
         ) : photo ? (
           // eslint-disable-next-line @next/next/no-img-element -- a local data URL of the customer's own photo; never sent through the image optimizer
-          <img src={photo.dataUrl} alt="عکس شما" className="size-full object-contain" />
+          <img src={photo.dataUrl} alt={COPY.yourPhoto} className="size-full object-contain" />
         ) : (
           <svg width="150" height="150" viewBox="0 0 150 150" fill="none" stroke="var(--slate)" strokeWidth="2" strokeLinecap="round" aria-hidden>
             <path d="M48 96c-10-22-6-58 27-58s37 36 27 58" fill="var(--teal-tint)" />
@@ -64,7 +54,7 @@ export function PhotoStep({ photo, onPhoto, onContinue }: Props) {
       {problem && <p role="alert" className="rounded-xl bg-danger-tint px-3 py-2.5 text-sm leading-6 text-danger">{problem}</p>}
 
       <div className="grid grid-cols-2 gap-3">
-        <button type="button" disabled={busy} onClick={openCamera} className="btn btn-soft"><IconCamera />{COPY.takeSelfie}</button>
+        <button type="button" disabled={busy} onClick={() => selfie.current?.click()} className="btn btn-soft"><IconCamera />{COPY.takeSelfie}</button>
         <button type="button" disabled={busy} onClick={() => gallery.current?.click()} className="btn btn-outline"><IconImage />{COPY.fromGallery}</button>
       </div>
       <input ref={selfie} type="file" accept="image/*" capture="user" hidden onChange={(e) => { void take(e.target.files?.[0]); e.target.value = ""; }} />
@@ -75,7 +65,7 @@ export function PhotoStep({ photo, onPhoto, onContinue }: Props) {
         <span className="grid size-6 place-items-center rounded-full border-2 border-teal"><span className="size-3 rounded-full bg-teal" /></span>
         <span><span className="block text-[17px] font-bold text-ink">{COPY.myHair}</span><span className="text-sm text-ink-2">{COPY.myHairSub}</span></span>
       </div>
-      <div aria-disabled className="flex items-center gap-3 rounded-2xl border border-line bg-surface px-4 py-3 opacity-70">
+      <div className="flex items-center gap-3 rounded-2xl border border-line bg-surface px-4 py-3 opacity-70">
         <span className="size-6 rounded-full border-2 border-line-strong" />
         <span className="flex-1"><span className="block text-[17px] font-bold text-ink">{COPY.newStyle}</span><span className="text-sm text-ink-2">{COPY.newStyleSub}</span></span>
         <span className="rounded-full bg-slate-tint px-3 py-1 text-xs font-medium text-ink-2">{COPY.soon}</span>

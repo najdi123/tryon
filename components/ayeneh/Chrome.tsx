@@ -30,7 +30,7 @@ export function Header({ onBack, onHelp }: { onBack?: () => void; onHelp: () => 
 // The three steps. A finished step is a button back to it; a later step is not reachable.
 export function Stepper({ step, onGo }: { step: Step; onGo: (s: Step) => void }) {
   return (
-    <nav aria-label="مراحل" className="flex items-center gap-1.5">
+    <nav aria-label={COPY.stepsLabel} className="flex items-center gap-1.5">
       {COPY.steps.map((label, i) => {
         const done = i < step;
         const current = i === step;

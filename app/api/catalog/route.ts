@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { shadeEngine } from "@/lib/catalog/hex";
+import { hairEngine } from "@/lib/engine";
 
 export const dynamic = "force-dynamic";
 
-export type CatalogShade = { code: string; nameFa: string; hex: string; familyKey: string; engine: "local" | "ai" };
+export type CatalogShade = { code: string; nameFa: string; hex: string; familyKey: string };
 export type CatalogLine = {
   key: string;
   brandKey: string;
@@ -31,11 +31,13 @@ export async function GET() {
         nameFa: l.nameFa,
         nameEn: l.nameEn,
         families: [...families].map(([key, nameFa]) => ({ key, nameFa })),
-        shades: l.shades.map((s) => ({ code: s.code, nameFa: s.nameFa, hex: s.hex ?? "#000000", familyKey: s.familyKey, engine: shadeEngine(s.code) })),
+        shades: l.shades.map((s) => ({ code: s.code, nameFa: s.nameFa, hex: s.hex ?? "#000000", familyKey: s.familyKey })),
       };
     });
-    return NextResponse.json({ lines: out }, { headers: { "Cache-Control": "private, max-age=60" } });
-  } catch {
+    // aiAvailable false: no image service is connected, and the app says so before asking for anything.
+    return NextResponse.json({ lines: out, aiAvailable: hairEngine().available() }, { headers: { "Cache-Control": "private, max-age=60" } });
+  } catch (e) {
+    console.error(`[catalog] ${e instanceof Error ? e.message : String(e)}`);
     return NextResponse.json({ error: "unavailable" }, { status: 503 });
   }
 }

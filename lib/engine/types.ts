@@ -4,6 +4,7 @@
 export type RecolorRequest = {
   image: { mimeType: string; base64: string };
   shade: { nameEn: string; hex: string; description: string | null };
+  signal: AbortSignal; // the customer left, or the time limit passed
 };
 
 export type RecolorResult =
@@ -12,5 +13,6 @@ export type RecolorResult =
 
 export interface HairEngine {
   readonly name: string;
+  available(): boolean; // false: no real engine is connected, and the app says so
   recolor(req: RecolorRequest): Promise<RecolorResult>;
 }

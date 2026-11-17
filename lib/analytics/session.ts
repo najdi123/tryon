@@ -203,13 +203,13 @@ export async function startAiTryOn(
   }, TX);
 }
 
-// The end of a preview the server made. Written outside the per-session event cap,
+// The end of a picture the server made. Written outside the per-session event cap,
 // so a full session can never hide a result.
 export async function finishAiTryOn(
   db: PrismaClient,
   args: {
     session: { id: string; galleryId: string | null };
-    target: { lineId: string; shadeId: string };
+    target: { lineId: string | null; shadeId: string | null };
     eventId: string;
     type: "TRYON_SUCCEEDED" | "TRYON_FAILED";
     status: string;
@@ -225,4 +225,31 @@ export async function finishAiTryOn(
       if (typeof e === "object" && e !== null && (e as { code?: string }).code === "P2002") return;
       throw e;
     });
+}
+
+export type AiVerdict = "accepted" | "nudged" | "unchecked" | "retry" | "rejected";
+export const AI_VERDICTS: readonly AiVerdict[] = ["accepted", "nudged", "unchecked", "retry", "rejected"];
+
+// What became of a picture the server made, as measured on the customer's phone. A verdict is
+// taken only for an attempt this browser really started, and only once: the first outcome stands.
+// accepted / nudged / unchecked -> a successful try-on. retry / rejected -> not a success.
+export async function settleAiTryOn(
+  db: PrismaClient,
+  args: { visitorId: string; attemptId: string; verdict: AiVerdict; now: Date },
+): Promise<"settled" | "unknown_attempt" | "already_settled"> {
+  const { visitorId, attemptId, verdict, now } = args;
+  const start = await db.analyticsEvent.findUnique({ where: { eventId: `${attemptId}_s` }, include: { session: true } });
+  if (!start || start.type !== "TRYON_STARTED" || start.session.visitorId !== visitorId) return "unknown_attempt";
+  const done = await db.analyticsEvent.findFirst({ where: { eventId: { in: [`${attemptId}_ok`, `${attemptId}_f`] } } });
+  if (done) return "already_settled";
+  const good = verdict === "accepted" || verdict === "nudged" || verdict === "unchecked";
+  await finishAiTryOn(db, {
+    session: { id: start.sessionId, galleryId: start.galleryId },
+    target: { lineId: start.lineId, shadeId: start.shadeId },
+    eventId: `${attemptId}_${good ? "ok" : "f"}`,
+    type: good ? "TRYON_SUCCEEDED" : "TRYON_FAILED",
+    status: good ? (verdict === "accepted" ? "ai" : `ai_${verdict}`) : verdict === "retry" ? "colour_retry" : "colour_off",
+    now,
+  });
+  return "settled";
 }

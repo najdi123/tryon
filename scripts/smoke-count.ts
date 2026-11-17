@@ -7,8 +7,8 @@ async function main() {
   const since = new Date(Date.now() - 15 * 60_000);
   const sessions = await db.session.findMany({ where: { startedAt: { gte: since } }, include: { gallery: true } });
   for (const s of sessions) {
-    const ev = await db.analyticsEvent.groupBy({ by: ["type"], where: { sessionId: s.id }, _count: true });
-    process.stdout.write(`${s.origin} ${s.gallery?.publicId ?? "-"} test=${s.isTest} ${ev.map((e) => `${e.type}:${e._count}`).join(" ")}\n`);
+    const ev = await db.analyticsEvent.groupBy({ by: ["type", "status"], where: { sessionId: s.id }, _count: true });
+    process.stdout.write(`${s.origin} ${s.gallery?.publicId ?? "-"} test=${s.isTest} ${ev.map((e) => `${e.type}${e.status ? `(${e.status})` : ""}:${e._count}`).join(" ")}\n`);
   }
   await db.$disconnect();
 }

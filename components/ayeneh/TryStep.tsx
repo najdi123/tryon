@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { tryOnAi, track, type CatalogLine, type CatalogShade } from "@/lib/client/api";
+import { track, type CatalogLine, type CatalogShade } from "@/lib/client/api";
+import { aiPreview } from "@/lib/client/tryon-flow";
 import { composeResult } from "@/lib/client/compose";
 import type { ReadyPhoto } from "@/lib/client/photo";
 import { lightnessGap, needsGemini, recolorPrepared } from "@/lib/hair-recolor";
@@ -40,7 +41,7 @@ function engineFor(photo: ReadyPhoto, shade: CatalogShade): "local" | "ai" {
 
 export function TryStep(p: Props) {
   const { line, photo, selected, results, aiAvailable } = p;
-  const [problem, setProblem] = useState<{ text: string; kind: "error" | "declined" } | null>(null);
+  const [problem, setProblem] = useState<{ text: string; kind: "error" | "declined" | "final" } | null>(null);
   const [asking, setAsking] = useState(false);
   const [labelled, setLabelled] = useState<{ key: string; url: string } | null>(null);
   const key = selected ? resultKey(line.key, photo.id, selected.code) : null;
@@ -91,10 +92,10 @@ export function TryStep(p: Props) {
     if (consent === null) return setAsking(true);
     if (consent === false) return setProblem({ text: `${COPY.consentDeclined}${canLocal ? ` ${COPY.consentDeclinedLocal}` : ""}`, kind: "declined" });
     p.onPending(k);
-    const r = await tryOnAi(photo.blob, line.key, shade.code); // the server records this try-on
+    const r = await aiPreview(photo, line.key, shade); // makes, measures, corrects or asks once more
     p.onPending(null);
     if (r.ok) p.onResult(k, r.image);
-    else setProblem({ text: TRYON_PROBLEM[r.reason], kind: "error" });
+    else setProblem({ text: r.reason === "colour_off" ? COPY.colourOff : TRYON_PROBLEM[r.reason], kind: r.reason === "colour_off" ? "final" : "error" });
   }
 
   function save() {

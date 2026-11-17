@@ -1,7 +1,8 @@
 import type { HairEngine, RecolorRequest, RecolorResult } from "./types";
 
-// The image-editing model this project's key is allowed to use. One line to change.
-const MODEL = process.env.GEMINI_IMAGE_MODEL ?? "gemini-2.5-flash-image";
+// The image model. Chosen on the 17 November 2026 tests (PLAN.md): of three models it landed
+// closest to the colour it was sent, repeated itself, and was the fastest and cheapest.
+const MODEL = process.env.GEMINI_IMAGE_MODEL ?? "gemini-3.1-flash-lite-image";
 const ENDPOINT = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent`;
 
 function prompt(shade: RecolorRequest["shade"]): string {

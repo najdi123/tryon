@@ -63,15 +63,23 @@ export async function loadCatalog(): Promise<Catalog> {
 export type TryOnFailure =
   | "offline" | "daily_limit" | "busy" | "not_configured" | "no_image" | "image_too_large" | "bad_image" | "failed";
 
-// One preview from the image service. The caller has the customer's consent before calling this.
-export async function tryOnAi(photo: Blob, lineKey: string, shadeCode: string): Promise<{ ok: true; image: string } | { ok: false; reason: TryOnFailure }> {
+// One picture from the image service. The caller has the customer's consent before calling this.
+// compensate: a second request may ask for the colour moved by a bounded amount (Lab).
+export async function tryOnAi(
+  photo: Blob,
+  lineKey: string,
+  shadeCode: string,
+  compensate?: [number, number, number],
+): Promise<{ ok: true; image: string; attemptId: string } | { ok: false; reason: TryOnFailure }> {
   await ensureSession();
+  const attemptId = newId(); // one id per picture: a resend can never count twice
   const form = new FormData();
   form.set("image", photo, "photo.jpg");
   form.set("lineKey", lineKey);
   form.set("shadeCode", shadeCode);
   form.set("consent", "yes");
-  form.set("attemptId", newId()); // one id per press: a resend can never count twice
+  form.set("attemptId", attemptId);
+  if (compensate) form.set("compensate", compensate.map((v) => v.toFixed(1)).join(","));
   let r: Response;
   try {
     r = await fetch("/api/tryon", { method: "POST", body: form, signal: AbortSignal.timeout(60_000) });
@@ -79,7 +87,20 @@ export async function tryOnAi(photo: Blob, lineKey: string, shadeCode: string): 
     return { ok: false, reason: e instanceof DOMException && e.name === "TimeoutError" ? "failed" : "offline" };
   }
   const data = (await r.json().catch(() => ({}))) as { image?: string; error?: string };
-  if (r.ok && data.image) return { ok: true, image: data.image };
+  if (r.ok && data.image) return { ok: true, image: data.image, attemptId };
   const known: TryOnFailure[] = ["daily_limit", "busy", "not_configured", "no_image", "image_too_large", "bad_image"];
   return { ok: false, reason: known.find((k) => k === data.error) ?? "failed" };
+}
+
+export type AiVerdict = "accepted" | "nudged" | "unchecked" | "retry" | "rejected";
+
+// Tells the server what became of a picture it made. Only then is the try-on a success or not.
+export function sendVerdict(attemptId: string, verdict: AiVerdict): void {
+  const body = JSON.stringify({ attemptId, verdict });
+  const send = (left: number): void => {
+    fetch("/api/tryon/verdict", { method: "POST", headers: { "content-type": "application/json" }, body, keepalive: true })
+      .then((r) => { if (r.status >= 500 && left > 0) setTimeout(() => send(left - 1), 2000); })
+      .catch(() => { if (left > 0) setTimeout(() => send(left - 1), 2000); });
+  };
+  send(2);
 }

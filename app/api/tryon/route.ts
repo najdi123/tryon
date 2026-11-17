@@ -3,6 +3,7 @@ import { db } from "@/lib/db";
 import { hasVisitor, logAnalyticsFailure, sessionForRequest } from "@/lib/analytics/http";
 import { isBotUserAgent } from "@/lib/analytics/rules";
 import { finishAiTryOn, startAiTryOn, type SessionRef } from "@/lib/analytics/session";
+import { compensatedHex } from "@/lib/colour/judge";
 import { hairEngine } from "@/lib/engine";
 
 export const dynamic = "force-dynamic";
@@ -18,9 +19,10 @@ function fail(error: string, status: number) {
   return NextResponse.json({ error }, { status });
 }
 
-// Makes one preview with the image service. The photo is held in memory for the call and is not
-// stored. The server writes the try-on events itself, so a success cannot be faked, and it counts
-// a success only when the answer was still wanted.
+// Makes one picture with the image service. The photo is held in memory for the call and is not
+// stored. The server records the start and any failure itself. A success is recorded only when
+// the customer's phone has measured the picture and kept it (/api/tryon/verdict): a picture that
+// nobody received, or whose colour missed, is never a successful try-on.
 export async function POST(req: NextRequest) {
   if (isBotUserAgent(req.headers.get("user-agent"))) return fail("forbidden", 403);
   const engine = hairEngine();
@@ -37,6 +39,9 @@ export async function POST(req: NextRequest) {
   const lineKey = String(form.get("lineKey") ?? "");
   const shadeCode = String(form.get("shadeCode") ?? "");
   const attemptId = String(form.get("attemptId") ?? "");
+  // A second request for the same preview may ask for the colour moved by a bounded amount.
+  const comp = String(form.get("compensate") ?? "").split(",").map(Number);
+  const compensate = comp.length === 3 && comp.every((v) => Number.isFinite(v)) ? (comp as [number, number, number]) : null;
   if (form.get("consent") !== "yes") return fail("consent_required", 400);
   if (!/^[A-Za-z0-9-]{8,48}$/.test(attemptId)) return fail("bad_request", 400);
   if (!(image instanceof File) || !ALLOWED_TYPES.has(image.type)) return fail("bad_image", 400);
@@ -56,7 +61,7 @@ export async function POST(req: NextRequest) {
     });
     if (!row || !row.hex) return fail("unknown_shade", 400);
     target = { lineId: row.lineId, shadeId: row.id };
-    shade = { nameEn: row.nameEn, hex: row.hex, description: row.colorDescription };
+    shade = { nameEn: row.nameEn, hex: compensate ? compensatedHex(row.hex, compensate) : row.hex, description: row.colorDescription };
     session = await sessionForRequest(req, cookies, { kind: "direct" });
     const start = await startAiTryOn(db, {
       session, target, eventId: `${attemptId}_s`, perVisitor: PER_VISITOR_PER_DAY, siteWide: SITE_WIDE_PER_DAY, now: new Date(),
@@ -85,6 +90,5 @@ export async function POST(req: NextRequest) {
     await finish("TRYON_FAILED", result.reason);
     return withCookies(fail(result.reason, 502));
   }
-  await finish("TRYON_SUCCEEDED", "ai");
   return withCookies(NextResponse.json({ image: result.imageDataUrl }));
 }

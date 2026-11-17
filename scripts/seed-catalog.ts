@@ -17,6 +17,7 @@ const BRANDS: Record<string, { key: string; nameFa: string; sort: number }> = {
 
 async function main() {
   const { makeClient } = await import("../lib/db");
+  const { shadeHex } = await import("../lib/catalog/hex");
   const db = makeClient();
   const cat = JSON.parse(readFileSync("data/catalog-official.json", "utf8")) as { lines: Line[] };
   let lineSort = 0;
@@ -46,12 +47,20 @@ async function main() {
           nameChecked: s.faSource === "chart",
           sort,
         };
+        // Colour and prompt wording are set once; a later panel edit is not overwritten.
+        const fresh = { hex: shadeHex(line.key, fam.key, s.code), colorDescription: `${s.nameEn.toLowerCase()} hair colour` };
         await db.shade.upsert({
           where: { lineId_code: { lineId: row.id, code: s.code } },
           update: data,
-          create: { ...data, lineId: row.id, code: s.code },
+          create: { ...data, ...fresh, lineId: row.id, code: s.code },
         });
       }
+    }
+    for (const sh of await db.shade.findMany({ where: { lineId: row.id, hex: null }, select: { id: true, code: true, familyKey: true, nameEn: true } })) {
+      await db.shade.update({
+        where: { id: sh.id },
+        data: { hex: shadeHex(line.key, sh.familyKey, sh.code), colorDescription: `${sh.nameEn.toLowerCase()} hair colour` },
+      });
     }
     const n = await db.shade.count({ where: { lineId: row.id } });
     process.stdout.write(`${line.key}: ${n} shades\n`);

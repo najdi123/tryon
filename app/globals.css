@@ -1,146 +1,169 @@
 @import "tailwindcss";
 
-/* Bianca × Oyster — dark gold theme (see README handoff: Design Tokens). */
+/* Ayeneh-rang, customer side: pale teal on white, navy ink (the reference screens).
+   One light look by design; the staff panel has its own palette. */
 :root {
-  --background: #0a0806;
-  --foreground: #f4ece0;
-
-  /* Stage */
-  --stage-warm: #241a12;
-  --stage-mid: #14100c;
-  --stage-base: #0a0806;
-
-  /* Gold ink */
-  --gold-title: #ecd9b0;
-  --gold-icon: #e0c48f;
-  --gold-icon-dim: #dcbf88;
-  --gold-outline: #e8d5ae;
-  --gold-bar: #cbb896;
-  --gold-amp: #8f7c5c;
-
-  /* Neutral ink */
-  --ink-headline: #f6efe3;
-  --ink-sub: #bcae98;
-  --ink-body: #a2957f;
-  /* Bumped from the comp's #948872 to clear WCAG AA at 12px (handoff a11y note). */
-  --ink-muted: #b3a68e;
-  --ink-faint: #8f8471;
-  --ink-footer: #6d6455;
-
-  /* Brand */
-  --cta-ink: #241a0e;
-  --oyster-ink: #f2e6d2;
-  --oyster-ink-dim: #e8e4dc;
-
-  /* Hairlines */
-  --line-ring: rgba(226, 196, 137, 0.3);
-  --line-panel: rgba(226, 196, 137, 0.22);
-  --line-faint: rgba(226, 196, 137, 0.16);
-  --line-divider: rgba(226, 196, 137, 0.14);
-  --line-neutral: rgba(226, 226, 226, 0.32);
+  color-scheme: light;
+  --bg: #f1f7f8;
+  --surface: #ffffff;
+  --ink: #14233a;
+  --ink-2: #47576c;
+  --ink-3: #6b7889;
+  --teal: #14807c;
+  --teal-strong: #0f6b68;
+  --teal-soft: #c6ebe6;
+  --teal-tint: #e7f5f3;
+  --line: #d3e0e5;
+  --line-strong: #a9bcc6;
+  --slate: #6a7d92;
+  --slate-tint: #e8eef3;
+  --note: #e3f0f7;
+  --danger: #a3262c;
+  --danger-tint: #fbeceb;
+  --card-bianca: #d7ebe7;
+  --card-oyster: #5f85a0;
+  --card-noammonia: #d9dde2;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-
-  --color-gold-title: var(--gold-title);
-  --color-gold-icon: var(--gold-icon);
-  --color-gold-icon-dim: var(--gold-icon-dim);
-  --color-gold-outline: var(--gold-outline);
-  --color-gold-bar: var(--gold-bar);
-  --color-gold-amp: var(--gold-amp);
-
-  --color-ink-headline: var(--ink-headline);
-  --color-ink-sub: var(--ink-sub);
-  --color-ink-body: var(--ink-body);
-  --color-ink-muted: var(--ink-muted);
-  --color-ink-faint: var(--ink-faint);
-  --color-ink-footer: var(--ink-footer);
-
-  --color-cta-ink: var(--cta-ink);
-  --color-oyster-ink: var(--oyster-ink);
-  --color-oyster-ink-dim: var(--oyster-ink-dim);
-
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-ink: var(--ink);
+  --color-ink-2: var(--ink-2);
+  --color-ink-3: var(--ink-3);
+  --color-teal: var(--teal);
+  --color-teal-strong: var(--teal-strong);
+  --color-teal-soft: var(--teal-soft);
+  --color-teal-tint: var(--teal-tint);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-slate: var(--slate);
+  --color-slate-tint: var(--slate-tint);
+  --color-note: var(--note);
+  --color-danger: var(--danger);
+  --color-danger-tint: var(--danger-tint);
   --font-sans: var(--font-vazirmatn);
-  --font-display: var(--font-cormorant);
 }
 
 body {
-  background: var(--stage-base);
-  color: var(--foreground);
+  background: var(--bg);
+  color: var(--ink);
   font-family: var(--font-vazirmatn), system-ui, sans-serif;
 }
 
-/* Dark stage used by the landing hero and the try-on flow. */
-.stage {
-  background: radial-gradient(
-    120% 90% at 50% 8%,
-    var(--stage-warm) 0%,
-    var(--stage-mid) 45%,
-    var(--stage-base) 100%
-  );
+.num {
+  font-variant-numeric: tabular-nums;
 }
 
-/* Gold gradient clipped to text — headline and the Latin brand lockup. */
-.gold-text {
-  background: linear-gradient(180deg, #fbeed2, #c9a05c);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
+/* The page column: a phone's width, centred on anything wider. */
+.column {
+  width: 100%;
+  max-width: 480px;
+  margin-inline: auto;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
 }
 
-.gold-text-logo {
-  background: linear-gradient(180deg, #f7e6c4, #c69f5f);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
+.rule {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.rule::before,
+.rule::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--line-strong);
 }
 
-.panel {
-  border: 1px solid var(--line-panel);
-  background: linear-gradient(180deg, rgba(36, 27, 18, 0.72), rgba(16, 12, 9, 0.72));
-  backdrop-filter: blur(6px);
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 52px;
+  border-radius: 16px;
+  font-weight: 700;
+  font-size: 16px;
+  transition: background 160ms ease, transform 160ms ease, opacity 160ms ease;
 }
-
-.cta {
-  color: var(--cta-ink);
-  background: linear-gradient(180deg, #f0d9a4, #c69a4f);
-  box-shadow:
-    0 18px 44px rgba(198, 154, 79, 0.34),
-    inset 0 1px 0 rgba(255, 255, 255, 0.45);
-  transition:
-    background 180ms ease,
-    box-shadow 180ms ease,
-    transform 180ms ease;
-}
-
-.cta:hover:not(:disabled) {
-  background: linear-gradient(180deg, #f8e6bd, #d3a95c);
-  box-shadow:
-    0 22px 52px rgba(198, 154, 79, 0.46),
-    inset 0 1px 0 rgba(255, 255, 255, 0.5);
-}
-
-.cta:active:not(:disabled) {
+.btn:active:not(:disabled) {
   transform: translateY(1px);
-  box-shadow:
-    0 10px 26px rgba(198, 154, 79, 0.3),
-    inset 0 1px 0 rgba(255, 255, 255, 0.4);
+}
+.btn-primary {
+  background: var(--teal);
+  color: #fff;
+}
+.btn-primary:hover:not(:disabled) {
+  background: var(--teal-strong);
+}
+.btn-primary:disabled {
+  background: var(--slate-tint);
+  color: var(--ink-3);
+}
+.btn-soft {
+  background: var(--teal-soft);
+  color: var(--ink);
+}
+.btn-outline {
+  background: var(--surface);
+  color: var(--ink);
+  border: 1.5px solid var(--line-strong);
 }
 
-.cta:disabled {
-  opacity: 0.45;
+.chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding-inline: 18px;
+  border-radius: 999px;
+  background: var(--slate-tint);
+  color: var(--ink-2);
+  font-size: 14px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+.chip[aria-pressed="true"] {
+  background: var(--teal);
+  color: #fff;
+  font-weight: 700;
+}
+.chip:disabled {
+  opacity: 0.6;
+}
+
+.scroll-x {
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.scroll-x::-webkit-scrollbar {
+  display: none;
 }
 
 :focus-visible {
-  outline: 2px solid #e0c48f;
+  outline: 2px solid var(--teal);
   outline-offset: 2px;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+.spinner {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 3px solid var(--teal-soft);
+  border-top-color: var(--teal);
+  animation: spin 800ms linear infinite;
 }
 
 @media (prefers-reduced-motion: reduce) {
   * {
     transition-duration: 0.01ms !important;
-    animation-duration: 0.01ms !important;
+    animation-duration: 1.6s !important;
   }
 }

@@ -8,7 +8,7 @@ The brief is two Word documents by Ali Shafiei (16 November 2026) with four refe
 This file is the working plan: what was decided, what is built, what is left. It is updated when a
 phase moves or a decision is made.
 
-Last updated: 17 November 2026.
+Last updated: 18 November 2026.
 
 ## Where things stand
 
@@ -17,7 +17,7 @@ Last updated: 17 November 2026.
 | 0 | Setup, database, official catalogue | Done |
 | 1 | QR links, sessions, events | Done, reviewed, fixes in |
 | 2 | The three customer screens, the picture engine | Built, reviewed, fixes in; colour check built and walked on real previews |
-| 3 | The staff panel, reports, Excel export | Not started |
+| 3 | The staff panel, reports, Excel export | Built, reviewed, fixes in, walked as admin and viewer |
 | 4 | The brief's tests, then delivery to the test site | Not started |
 | 5 | Later features (live camera, hairstyles, highlight, ombre, balayage) | After the base version |
 
@@ -97,6 +97,26 @@ unchecked (recorded as such).
 A try-on counts as a success only when the phone kept the picture (steps 2, 3 or a good retry).
 The rules and their numbers are in `lib/colour/judge.ts`, with tests.
 
+### The staff panel (Phase 3)
+- Login with two roles. An admin changes things; a viewer sees the reports and can export them.
+  Every page, download and action checks the session and the role on the server.
+- Overview (cards, provinces, popular shades, galleries), galleries with search and a detail page
+  (daily trend, brand share, QR download), shade report, catalogue editing, users, change log.
+- **One counting rule:** a report is the set of valid sessions that started inside the range
+  (Tehran days), were not staff tests or robots, and match the filters. Every card, table and
+  Excel file is counted from those sessions and their events only, so they always agree.
+- **With a brand filter,** a session counts when that brand was chosen in it, and QR entries follow
+  the same rule. The page says so under the cards. This is our definition; the brief is silent.
+- Sample galleries never mix into real reports. "داده نمونه" shows only them, under a banner.
+- Excel export for provinces, galleries and shades, built from the screen's own rows; its head
+  states the filters (search and status included), the range and the time it was made.
+- The QR's address comes from the `PUBLIC_BASE_URL` setting only. Without it no QR is made in
+  production, because a printed QR cannot be corrected. An inactive gallery gets no QR.
+- A gallery's province is chosen from Iran's 31 provinces, not typed.
+- The login lock is five wrong passwords per username and address in ten minutes.
+- Checked on the server: cards, tables and Excel totals agree across 11 filter combinations in
+  sample mode and 7 in real mode; a browser walk of 29 checks as admin and viewer passes.
+
 ## The model tests (17 November 2026)
 
 One question: which model paints the colour it is asked for. Two computer-made faces (brown wavy
@@ -127,13 +147,10 @@ Rough prices per picture from third-party lists (not Google's own page): Lite ab
 ## What is left
 
 ### Before the base version is done
-- **Phase 3, the staff panel:** login with admin and viewer roles; overview with filters (time in
-  Tehran days, province, gallery, brand); province, gallery and shade reports; gallery and QR
-  management with QR download; settings and change log; Excel export equal to the screen.
 - **Phase 4:** the tests the brief lists (QR to output, back navigation, duplicate events, Tehran
   day boundary, card totals equal tables, filter combinations, shared codes across lines,
-  unauthorized access, Excel equals screen); a setup guide; deploy to the test site with an nginx
-  rate limit on the events and try-on addresses.
+  unauthorized access, Excel equals screen); a setup guide; deploy to the test site with
+  `PUBLIC_BASE_URL` set and nginx rate limits on the events, try-on and staff login addresses.
 - **A real phone test:** camera, saving the labelled picture, share. Not possible from a desk.
 - **Real photos:** every test so far used computer-made faces.
 
@@ -146,6 +163,13 @@ Rough prices per picture from third-party lists (not Google's own page): Lite ab
 - Who gets admin and viewer logins.
 
 ### Known gaps
+- The panel's custom date boxes use the browser's own (Western) date picker; dates are displayed
+  in the Persian calendar everywhere else.
+- A year-long range over millions of events will be slow: each report rebuilds its session set.
+  Fine at 30 days; a daily roll-up is the later fix.
+- The retention setting is recorded but nothing deletes old events yet.
+- Two test logins (`stage-admin`, `stage-viewer`) and 999 sample sessions are in the database for
+  testing; the logins are removed before delivery.
 - The optional name, mobile and province form is not built.
 - Keyboard focus is not trapped inside the bottom sheets.
 - Sample galleries are not marked as sample in the customer footer.

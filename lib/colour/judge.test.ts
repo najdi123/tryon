@@ -21,7 +21,7 @@ test("a preview within the tolerance is shown as it came (the tests' Lite result
 test("a preview that is the right colour but too dark is corrected, not paid for twice (the tests' red)", () => {
   const v = judge(hexToLab("#602822"), "#9b2f2f", brown);
   assert.equal(v.kind, "nudge");
-  assert.ok(v.kind === "nudge" && v.scaleL > 1 && v.scaleL < 1.6);
+  assert.ok(v.kind === "nudge" && v.scaleL > 1 && v.scaleL <= 1.18); // lighter, but only a little
 });
 test("a preview far from the shade asks for a new picture, compensated towards the shade", () => {
   const v = judge(hexToLab("#2e1514"), "#9b2f2f", black); // the tests' burgundy on black hair
@@ -37,9 +37,11 @@ test("hair that did not change is a retry, never shown as a result", () => {
 test("a shade close to the customer's own hair is not mistaken for 'did not change'", () => {
   assert.equal(judge(hexToLab("#56392b"), "#54392a", brown).kind, "accept");
 });
-test("a correction too strong to look real is a retry instead", () => {
-  const v = judge(hexToLab("#32291f"), "#6e5c49", black); // near in distance, but the lightness would need doubling
-  assert.equal(v.kind === "retry" && v.reason, "too_strong");
+test("the correction is always small, however far the colour is inside the nudge range", () => {
+  const v = judge(hexToLab("#32291f"), "#6e5c49", black); // the lightness would need doubling
+  assert.ok(v.kind === "nudge" && v.scaleL === 1.18 && Math.abs(v.da) <= 7 && Math.abs(v.db) <= 7);
+  const w = judge(hexToLab("#c9b08a"), "#a09689", brown); // too warm and too light for an ash
+  assert.ok(w.kind === "nudge" && w.scaleL >= 0.88 && w.scaleL < 1 && Math.abs(w.db) <= 7);
 });
 test("a retry can never ask for a colour far from the shade", () => {
   const asked = compensatedHex("#bba082", [90, -90, 90]);

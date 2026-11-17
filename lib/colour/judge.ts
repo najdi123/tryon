@@ -3,17 +3,23 @@ import { deltaE, hexToLab, labToHex, type Lab } from "./lab";
 // The rules for what happens to a preview the image service made, decided by measuring it.
 // Numbers come from the 17 November 2026 tests (PLAN.md): the chosen model lands within about 4
 // of the colour it is sent on most shades and about 25 too dark on reds.
-export const ACCEPT_WITHIN = 6; // close enough: shown as it came
+export const ACCEPT_WITHIN = 10; // close enough: shown as it came
 export const NUDGE_WITHIN = 30; // further than this is a miss, not something to correct
 export const UNCHANGED_WITHIN = 5; // the hair still measures as it did before
-export const LIGHTNESS_SCALE_MIN = 0.6; // past these the correction itself would look fake
-export const LIGHTNESS_SCALE_MAX = 1.6;
+// The correction is deliberately small. On the first build it moved the hair all the way to the
+// shade's colour: the result looked painted, and wherever the catalogue's colour was itself
+// approximate it made the picture worse. So it now goes half way, within tight limits, and
+// leaves the picture's own shading alone.
+export const NUDGE_SHARE = 0.5;
+export const NUDGE_SCALE_MIN = 0.88;
+export const NUDGE_SCALE_MAX = 1.18;
+export const NUDGE_CHROMA_MAX = 7; // per colour axis
 export const COMPENSATE_MAX = 25; // how far a retry may move the colour it asks for, per axis
 
 export type Verdict =
   | { kind: "accept"; distance: number }
   | { kind: "nudge"; distance: number; scaleL: number; da: number; db: number }
-  | { kind: "retry"; distance: number; reason: "unchanged" | "far" | "too_strong"; compensate: Lab };
+  | { kind: "retry"; distance: number; reason: "unchanged" | "far"; compensate: Lab };
 
 // measured: the lit body of the hair in the preview. before: the same in the customer's photo.
 export function judge(measured: Lab, targetHex: string, before: Lab): Verdict {
@@ -27,9 +33,15 @@ export function judge(measured: Lab, targetHex: string, before: Lab): Verdict {
     return { kind: "retry", distance, reason: "unchanged", compensate };
   }
   if (distance > NUDGE_WITHIN) return { kind: "retry", distance, reason: "far", compensate };
-  const scaleL = target[0] / Math.max(measured[0], 1);
-  if (scaleL < LIGHTNESS_SCALE_MIN || scaleL > LIGHTNESS_SCALE_MAX) return { kind: "retry", distance, reason: "too_strong", compensate };
-  return { kind: "nudge", distance, scaleL, da: target[1] - measured[1], db: target[2] - measured[2] };
+  const lim = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v));
+  const wantScale = target[0] / Math.max(measured[0], 1);
+  return {
+    kind: "nudge",
+    distance,
+    scaleL: lim(1 + (wantScale - 1) * NUDGE_SHARE, NUDGE_SCALE_MIN, NUDGE_SCALE_MAX),
+    da: lim((target[1] - measured[1]) * NUDGE_SHARE, -NUDGE_CHROMA_MAX, NUDGE_CHROMA_MAX),
+    db: lim((target[2] - measured[2]) * NUDGE_SHARE, -NUDGE_CHROMA_MAX, NUDGE_CHROMA_MAX),
+  };
 }
 
 // The colour a retry asks the image service for: the shade's own colour moved by the bounded miss.

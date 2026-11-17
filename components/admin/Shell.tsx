@@ -85,9 +85,10 @@ type Options = { provinces: string[]; galleries: Array<{ id: string; name: strin
 
 // A plain form: applying it loads the page with the filters in its address, so every card,
 // table and export on the page reads the same filters.
-export function FilterBar({ action, f, options }: { action: string; f: Filters; options: Options }) {
+// scoped: the page is already one gallery, so the province, gallery and sample choices are left out.
+export function FilterBar({ action, f, options, scoped = false }: { action: string; f: Filters; options: Options; scoped?: boolean }) {
   return (
-    <form action={action} method="get" className="a-card mb-5 grid gap-3 p-4 sm:grid-cols-2 xl:grid-cols-[repeat(4,minmax(0,1fr))_auto]">
+    <form action={action} method="get" className={`a-card mb-5 grid gap-3 p-4 sm:grid-cols-2 ${scoped ? "xl:grid-cols-[repeat(2,minmax(0,1fr))_auto]" : "xl:grid-cols-[repeat(4,minmax(0,1fr))_auto]"}`}>
       <div>
         <label className="a-label" htmlFor="f-range">{A.f.range}</label>
         <select id="f-range" name="range" defaultValue={f.preset} className="a-input">
@@ -102,6 +103,8 @@ export function FilterBar({ action, f, options }: { action: string; f: Filters; 
           <input type="date" name="to" defaultValue={f.to} aria-label={A.f.to} dir="ltr" className="a-input" />
         </div>
       </div>
+      {!scoped && (
+        <>
       <div>
         <label className="a-label" htmlFor="f-prov">{A.f.province}</label>
         <select id="f-prov" name="province" defaultValue={f.province ?? ""} className="a-input">
@@ -118,16 +121,20 @@ export function FilterBar({ action, f, options }: { action: string; f: Filters; 
           {!f.sample && <option value={UNKNOWN}>{A.f.unknownGallery}</option>}
         </select>
       </div>
+        </>
+      )}
       <div>
         <label className="a-label" htmlFor="f-line">{A.f.line}</label>
         <select id="f-line" name="line" defaultValue={f.lineKey ?? ""} className="a-input">
           <option value="">{A.f.allLines}</option>
           {options.lines.map((l) => <option key={l.key} value={l.key}>{l.nameFa}</option>)}
         </select>
-        <label className="mt-2 flex min-h-11 items-center gap-2 text-sm">
-          <input type="checkbox" name="sample" value="1" defaultChecked={f.sample} className="size-5" />
-          {A.f.sample}
-        </label>
+        {!scoped && (
+          <label className="mt-2 flex min-h-11 items-center gap-2 text-sm">
+            <input type="checkbox" name="sample" value="1" defaultChecked={f.sample} className="size-5" />
+            {A.f.sample}
+          </label>
+        )}
       </div>
       <div className="flex items-start gap-2 pt-[26px]">
         <button type="submit" className="a-btn a-btn-gold">{A.f.apply}</button>

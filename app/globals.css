@@ -188,7 +188,7 @@ body {
   color: var(--a-ink);
   min-height: 100dvh;
 }
-.admin a {
+.admin a:not(.a-btn) {
   color: inherit;
 }
 .a-card {

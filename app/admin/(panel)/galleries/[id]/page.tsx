@@ -45,7 +45,7 @@ export default async function GalleryDetail({ params, searchParams }: Props) {
         <span className="rounded-full bg-[var(--gold-soft)] px-3 py-2 text-sm">{gallery.status === "ACTIVE" ? A.active : A.inactive}</span>
         {gallery.isSample && <span className="rounded-full bg-[var(--plum)] px-3 py-2 text-sm text-white">{A.sampleGallery}</span>}
       </PageHead>
-      <FilterBar action={`/admin/galleries/${id}`} f={f} options={{ ...options, provinces: [], galleries: [] }} />
+      <FilterBar action={`/admin/galleries/${id}`} f={f} options={options} scoped />
 
       <div className="mb-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <Stat label={A.m.qrEntries} value={faNum(s.qrEntries)} unit={A.m.qrEntriesUnit} />

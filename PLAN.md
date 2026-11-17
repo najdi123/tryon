@@ -18,10 +18,10 @@ Last updated: 17 November 2026 (Phase 4 tests).
 | 1 | QR links, sessions, events | Done, reviewed, fixes in |
 | 2 | The three customer screens, the picture engine | Built, reviewed, fixes in; colour check built and walked on real previews |
 | 3 | The staff panel, reports, Excel export | Built, reviewed, fixes in, walked as admin and viewer |
-| 4 | The brief's tests, then delivery to the test site | Tests done and passing, setup guide and nginx file written (`TESTS.md`, `README.md`, `deploy/`). Deployment waits for Ali's yes |
+| 4 | The brief's tests, then delivery to the test site | Tests done and passing, setup guide and nginx file written (`TESTS.md`, `README.md`, `deploy/`). Deployed to zibarokh.rukhat.com on 17 November 2026 |
 | 5 | Later features (live camera, hairstyles, highlight, ombre, balayage) | After the base version |
 
-The live site (zibarokh.rukhat.com) still serves the old app. Nothing new is deployed there.
+The live site (zibarokh.rukhat.com) serves the new app since 17 November 2026 (the old app was commit `b6bbd6a`; the old nginx file is kept on the server as `/root/zibarokh-rukhat.nginx.before-ayeneh`). One admin login exists; the stage logins are removed. Still to do: the real-phone test.
 A stopped test copy of the new code is on the server at `/root/qr-tryon-stage`, port 3018.
 The delivery tests use their own database, `ayeneh_test`, and the same copy started on port 3019.
 
@@ -148,9 +148,6 @@ Rough prices per picture from third-party lists (not Google's own page): Lite ab
 ## What is left
 
 ### Before the base version is done
-- **Deployment (needs Ali's yes, it replaces the old site):** update `/root/qr-tryon` to `main`,
-  `npm ci`, build, add `PUBLIC_BASE_URL` to its settings, restart, install
-  `deploy/nginx-zibarokh.conf`, create the real admin, remove the two stage logins.
 - **A real phone test:** camera, saving the labelled picture, share. Not possible from a desk.
 - **Real photos:** every test so far used computer-made faces.
 

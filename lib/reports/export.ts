@@ -6,7 +6,7 @@ import { A } from "@/components/admin/copy";
 import { db } from "@/lib/db";
 import { UNKNOWN, faDay, faMoment, type Filters } from "./filters";
 import { byGallery, byProvince, byShade, summary } from "./queries";
-import { rankWithTies, share } from "./rank";
+import { foldSearch, rankWithTies, share } from "./rank";
 
 export type ReportName = "provinces" | "galleries" | "shades";
 export const REPORTS: readonly ReportName[] = ["provinces", "galleries", "shades"];
@@ -29,9 +29,9 @@ export async function reportTable(name: ReportName, f: Filters, now: Date, extra
     };
   }
   if (name === "galleries") {
-    const needle = (extra.q ?? "").toLowerCase();
+    const needle = foldSearch(extra.q ?? "");
     const all = (await byGallery(f, now)).filter((g) =>
-      (!needle || g.name.toLowerCase().includes(needle) || g.publicId.toLowerCase().includes(needle)) &&
+      (!needle || foldSearch(g.name).includes(needle) || foldSearch(g.publicId).includes(needle)) &&
       (!extra.status || (g.id !== UNKNOWN && g.status === extra.status)));
     const rows = rankWithTies(all, (g) => g.successes);
     return {
@@ -56,7 +56,7 @@ export async function reportTable(name: ReportName, f: Filters, now: Date, extra
   };
 }
 
-async function filterLines(f: Filters): Promise<string[]> {
+async function filterLines(f: Filters, extra: { q?: string; status?: string }): Promise<string[]> {
   const [gallery, line] = await Promise.all([
     f.galleryId && f.galleryId !== UNKNOWN ? db.gallery.findUnique({ where: { id: f.galleryId }, select: { name: true } }) : null,
     f.lineKey ? db.productLine.findUnique({ where: { key: f.lineKey }, select: { nameFa: true } }) : null,
@@ -65,6 +65,9 @@ async function filterLines(f: Filters): Promise<string[]> {
     `${A.f.province}: ${f.province ? provinceLabel(f.province) : A.f.allProvinces}`,
     `${A.f.gallery}: ${f.galleryId === UNKNOWN ? A.f.unknownGallery : (gallery?.name ?? A.f.allGalleries)}`,
     `${A.f.line}: ${line?.nameFa ?? A.f.allLines}`,
+    // Anything that changes the rows is stated in the file.
+    ...(extra.q ? [`${A.x.search}: ${extra.q}`] : []),
+    ...(extra.status ? [`${A.status}: ${extra.status === "ACTIVE" ? A.active : A.inactive}`] : []),
   ];
 }
 
@@ -76,8 +79,8 @@ export async function reportWorkbook(name: ReportName, f: Filters, now: Date, ex
   const head: string[] = [
     `${A.x.report}: ${table.title}${f.sample ? ` (${A.f.sample})` : ""}`,
     `${A.x.range}: ${A.rangeLine(faDay(f.from), faDay(f.to))}`,
-    `${A.x.filters}: ${(await filterLines(f)).join(" | ")}`,
-    `${A.x.generated}: ${faMoment(now)} (به وقت تهران)`,
+    `${A.x.filters}: ${(await filterLines(f, name === "galleries" ? extra : {})).join(" | ")}`,
+    `${A.x.generated}: ${faMoment(now)} ${A.tehranTime}`,
     A.x.note,
   ];
   for (const line of head) ws.addRow([line]);

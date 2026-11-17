@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { currentStaff } from "@/lib/admin/auth";
 import { REPORTS, reportWorkbook, type ReportName } from "@/lib/reports/export";
-import { parseFilters } from "@/lib/reports/filters";
+import { loadFilters } from "@/lib/reports/queries";
 
 export const dynamic = "force-dynamic";
 
@@ -12,9 +12,9 @@ export async function GET(req: NextRequest) {
   const report = REPORTS.find((r) => r === params.report);
   if (!report) return new NextResponse(null, { status: 400 });
   const now = new Date();
-  const f = parseFilters(params, now);
+  const { f } = await loadFilters(params, now); // the same resolution as the screen
   const status = params.status === "ACTIVE" || params.status === "INACTIVE" ? params.status : undefined;
-  const file = await reportWorkbook(report as ReportName, f, now, { q: params.q, status });
+  const file = await reportWorkbook(report as ReportName, f, now, { q: params.q?.slice(0, 60), status });
   return new NextResponse(new Uint8Array(file), {
     headers: {
       "Content-Type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",

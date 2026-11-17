@@ -10,10 +10,15 @@ export const dynamic = "force-dynamic";
 export async function GET(req: NextRequest, ctx: { params: Promise<{ id: string }> }) {
   if (!(await currentStaff())) return new NextResponse(null, { status: 401 });
   const { id } = await ctx.params;
-  const gallery = await db.gallery.findUnique({ where: { id }, include: { tokens: { where: { active: true }, take: 1 } } });
+  const gallery = await db.gallery.findUnique({
+    where: { id },
+    include: { tokens: { where: { active: true, revokedAt: null }, orderBy: { createdAt: "desc" }, take: 1 } },
+  });
   const token = gallery?.tokens[0]?.token;
   if (!gallery || !token) return new NextResponse(null, { status: 404 });
+  if (gallery.status !== "ACTIVE") return new NextResponse("gallery inactive", { status: 409 }); // its QR attributes nothing
   const link = await qrLink(token);
+  if (!link) return new NextResponse("PUBLIC_BASE_URL is not set", { status: 500 });
   const options = { errorCorrectionLevel: "M" as const, margin: 3 };
   const inline = req.nextUrl.searchParams.get("inline") === "1";
   const name = `qr-${gallery.publicId}`;

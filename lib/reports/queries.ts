@@ -10,7 +10,7 @@
 // Real galleries and sample galleries are never mixed: the report shows one or the other.
 import { Prisma } from "@/lib/generated/prisma/client";
 import { db } from "@/lib/db";
-import { UNKNOWN, rangeUtc, type Filters } from "./filters";
+import { UNKNOWN, parseFilters, rangeUtc, type Filters } from "./filters";
 
 const n = (v: unknown) => Number(v ?? 0);
 
@@ -80,7 +80,7 @@ export async function byProvince(f: Filters, now: Date): Promise<ProvinceRow[]> 
       count(*) FILTER (WHERE e.type = 'QR_LANDING') AS entries,
       count(*) FILTER (WHERE e.type = 'TRYON_SUCCEEDED') AS successes
     FROM vs v LEFT JOIN "Gallery" g ON g.id = v."galleryId" LEFT JOIN ev e ON e."sessionId" = v.id
-    GROUP BY 1`);
+    GROUP BY 1 ORDER BY 1`);
   return rows.map((r) => ({
     province: String(r.province), activeGalleries: n(r.galleries), sessions: n(r.sessions), qrEntries: n(r.entries), successes: n(r.successes),
   }));
@@ -102,13 +102,11 @@ export type GalleryRow = {
 // Every registered gallery the filters allow, with its numbers (zeros included), then the
 // unknown-origin row when it has any session.
 export async function byGallery(f: Filters, now: Date): Promise<GalleryRow[]> {
-  const galleries = await db.gallery.findMany({
-    where: {
-      isSample: f.sample,
-      ...(f.province && f.province !== UNKNOWN ? { province: f.province } : {}),
-      ...(f.galleryId && f.galleryId !== UNKNOWN ? { id: f.galleryId } : {}),
-    },
-    orderBy: { name: "asc" },
+  // "Unknown province" and "unknown origin" hold no registered gallery: only the unknown row.
+  const onlyUnknown = f.province === UNKNOWN || f.galleryId === UNKNOWN;
+  const galleries = onlyUnknown ? [] : await db.gallery.findMany({
+    where: { isSample: f.sample, ...(f.province ? { province: f.province } : {}), ...(f.galleryId ? { id: f.galleryId } : {}) },
+    orderBy: [{ name: "asc" }, { publicId: "asc" }],
   });
   const agg = await db.$queryRaw<Array<Record<string, unknown>>>(Prisma.sql`${scope(f, now)}
     SELECT v."galleryId" AS gid, count(DISTINCT v.id) AS sessions,
@@ -118,7 +116,8 @@ export async function byGallery(f: Filters, now: Date): Promise<GalleryRow[]> {
   const top = await db.$queryRaw<Array<Record<string, unknown>>>(Prisma.sql`${scope(f, now)}
     SELECT e."galleryId" AS gid, pl."nameEn" AS line, sh.code, count(*) AS successes
     FROM ev e JOIN "Shade" sh ON sh.id = e."shadeId" JOIN "ProductLine" pl ON pl.id = sh."lineId"
-    WHERE e.type = 'TRYON_SUCCEEDED' GROUP BY 1, 2, 3`);
+    WHERE e.type = 'TRYON_SUCCEEDED' GROUP BY e."galleryId", sh.id, pl."nameEn", pl.sort, sh.sort, sh.code
+    ORDER BY pl.sort, sh.sort`); // among tied shades, the catalogue's first: the same on screen and in the file
   const numbers = new Map(agg.map((r) => [r.gid === null ? UNKNOWN : String(r.gid), r]));
   const popular = new Map<string, GalleryRow["popular"]>();
   for (const r of top) {
@@ -157,7 +156,8 @@ export async function byShade(f: Filters, now: Date): Promise<ShadeRow[]> {
       count(*) FILTER (WHERE e.type = 'TRYON_SUCCEEDED') AS successes
     FROM ev e JOIN "Shade" sh ON sh.id = e."shadeId" JOIN "ProductLine" pl ON pl.id = sh."lineId"
     WHERE e.type IN ('SHADE_SELECTED', 'TRYON_SUCCEEDED')
-    GROUP BY sh.id, pl.key, pl."nameFa", pl."nameEn", sh.code, sh."nameFa"`);
+    GROUP BY sh.id, pl.key, pl."nameFa", pl."nameEn", pl.sort, sh.sort, sh.code, sh."nameFa"
+    ORDER BY pl.sort, sh.sort`);
   return rows.map((r) => ({
     shadeId: String(r.id), lineKey: String(r.line_key), lineFa: String(r.line_fa), lineEn: String(r.line_en),
     code: String(r.code), nameFa: String(r.name_fa), selections: n(r.selections), successes: n(r.successes),
@@ -196,4 +196,15 @@ export async function filterOptions(f: Filters) {
   const provinces = [...new Set(galleries.map((g) => g.province))].sort((a, b) => a.localeCompare(b, "fa"));
   const inProvince = f.province && f.province !== UNKNOWN ? galleries.filter((g) => g.province === f.province) : galleries;
   return { provinces, galleries: inProvince.map((g) => ({ id: g.id, name: g.name })), lines };
+}
+
+// The filters a page or a file works with, and what its filter bar offers. A gallery left over
+// from an earlier choice that is not in the chosen province is dropped here, once, so the page
+// never shows an empty report under a select that reads "all galleries".
+export async function loadFilters(params: Record<string, string | string[] | undefined>, now: Date) {
+  let f = parseFilters(params, now);
+  const options = await filterOptions(f);
+  if (f.galleryId && f.galleryId !== UNKNOWN && !options.galleries.some((g) => g.id === f.galleryId)) f = { ...f, galleryId: null };
+  if (f.province && f.province !== UNKNOWN && !options.provinces.includes(f.province)) f = { ...f, province: null };
+  return { f, options };
 }

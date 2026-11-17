@@ -2,8 +2,8 @@ import Link from "next/link";
 import { A } from "@/components/admin/copy";
 import { Card, Empty, ExcelLink, FilterBar, PageHead, Shell, Stat, provinceLabel } from "@/components/admin/Shell";
 import { requireStaff } from "@/lib/admin/auth";
-import { UNKNOWN, filtersQuery, parseFilters } from "@/lib/reports/filters";
-import { byGallery, byProvince, byShade, filterOptions, summary } from "@/lib/reports/queries";
+import { UNKNOWN, filtersQuery } from "@/lib/reports/filters";
+import { byGallery, byProvince, byShade, loadFilters, summary } from "@/lib/reports/queries";
 import { faNum, faPercent, rankWithTies, share } from "@/lib/reports/rank";
 
 export const dynamic = "force-dynamic";
@@ -15,10 +15,8 @@ export default async function Overview({ searchParams }: Props) {
   const user = await requireStaff();
   const params = await searchParams;
   const now = new Date();
-  const f = parseFilters(params, now);
-  const [s, provinces, galleries, shades, options] = await Promise.all([
-    summary(f, now), byProvince(f, now), byGallery(f, now), byShade(f, now), filterOptions(f),
-  ]);
+  const { f, options } = await loadFilters(params, now);
+  const [s, provinces, galleries, shades] = await Promise.all([summary(f, now), byProvince(f, now), byGallery(f, now), byShade(f, now)]);
   const provinceRows = rankWithTies(provinces, (p) => p.successes);
   const topShades = rankWithTies(shades.filter((x) => x.successes > 0), (x) => x.successes).slice(0, 6);
   const topGalleries = rankWithTies(galleries, (g) => g.successes).slice(0, 8);
@@ -31,7 +29,7 @@ export default async function Overview({ searchParams }: Props) {
       <FilterBar action="/admin" f={f} options={options} />
 
       <div className="mb-3 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <Stat label={A.m.activeGalleries} value={faNum(s.activeGalleries)} unit={A.m.activeGalleriesUnit} />
+        <Stat label={A.m.activeGalleries} value={faNum(s.activeGalleries)} unit={A.m.activeGalleriesUnit} help={A.m.activeGalleriesHelp} />
         <Stat label={A.m.successes} value={faNum(s.successes)} unit={A.m.successesUnit} />
         <Stat label={A.m.visitors} value={faNum(s.visitors)} unit={A.m.visitorsUnit} help={A.m.visitorsHelp} />
         <Stat label={A.m.qrEntries} value={faNum(s.qrEntries)} unit={A.m.qrEntriesUnit} />
@@ -41,6 +39,8 @@ export default async function Overview({ searchParams }: Props) {
         <Stat label={A.m.selections} value={faNum(s.selections)} />
         <Stat label={A.m.completion} value={faPercent(share(s.completedSessions, s.sessions))} unit={A.m.completionHelp} />
       </div>
+
+      {f.lineKey && <p className="mb-5 text-sm text-[var(--a-ink-2)]">{A.lineFilterNote}</p>}
 
       <div className="grid gap-x-5 xl:grid-cols-2">
         <Card title={A.provincesTitle} actions={<ExcelLink report="provinces" f={f} />}>
@@ -53,7 +53,7 @@ export default async function Overview({ searchParams }: Props) {
                     <tr key={p.province}>
                       <td className="n">{faNum(p.rank)}</td>
                       <td>
-                        <Link href={`/admin/galleries?${filtersQuery({ ...f, province: p.province, galleryId: null })}`} className="font-bold underline">
+                        <Link href={`/admin/galleries?${filtersQuery({ ...f, province: p.province, galleryId: null })}`} className="inline-flex min-h-11 items-center font-bold underline">
                           {provinceLabel(p.province)}
                         </Link>
                       </td>
@@ -97,13 +97,13 @@ export default async function Overview({ searchParams }: Props) {
                 {topGalleries.map((g) => (
                   <tr key={g.id}>
                     <td className="font-bold">
-                      {g.id === UNKNOWN ? A.f.unknownGallery : <Link href={`/admin/galleries/${g.id}?${filtersQuery(f)}`} className="underline">{g.name}</Link>}
+                      {g.id === UNKNOWN ? A.f.unknownGallery : <Link href={`/admin/galleries/${g.id}?${filtersQuery(f)}`} className="inline-flex min-h-11 items-center underline">{g.name}</Link>}
                     </td>
                     <td>{provinceLabel(g.province)}</td>
                     <td className="n">{faNum(g.qrEntries)}</td>
                     <td className="n">{faNum(g.sessions)}</td>
                     <td className="n">{faNum(g.successes)}</td>
-                    <td dir="ltr" className="text-end">{g.popular ? g.popular.label : "—"}</td>
+                    <td dir="ltr" className="text-end">{g.popular ? `${g.popular.label}${g.popular.tiedWith ? " *" : ""}` : "—"}</td>
                   </tr>
                 ))}
               </tbody>

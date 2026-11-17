@@ -31,6 +31,9 @@ async function main() {
   const galleries = [];
   for (const g of SAMPLES) {
     const { weight, ...data } = g;
+    // A real gallery may carry one of these ids: checked BEFORE anything is written.
+    const existing = await db.gallery.findUnique({ where: { publicId: g.publicId } });
+    if (existing && !existing.isSample) throw new Error(`${g.publicId} is a real gallery: refusing to touch it. Nothing was changed.`);
     const row = await db.gallery.upsert({
       where: { publicId: g.publicId },
       update: { name: data.name, province: data.province, city: data.city },

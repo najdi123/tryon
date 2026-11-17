@@ -21,3 +21,13 @@ const digits = (s: string) => s.replace(/\d/g, (d) => FA[Number(d)]);
 export const faNum = (n: number) => digits(n.toLocaleString("en-US")).replace(/,/g, "٬");
 export const faPercent = (p: number | null) => (p === null ? "—" : `${digits(p.toFixed(1)).replace(".", "٫")}٪`);
 export const faDigits = digits;
+
+// Search text made comparable: Persian and Arabic digits to Latin, the two forms of ی and ک made
+// one, the half-space dropped, lower case. The screen and the file use the same folding.
+export function foldSearch(v: string): string {
+  return v
+    .replace(/[۰-۹]/g, (d) => String(FA.indexOf(d)))
+    .replace(/[٠-٩]/g, (d) => String(d.charCodeAt(0) - 0x660))
+    .replace(/ي/g, "ی").replace(/ك/g, "ک").replace(/\u200c/g, "")
+    .trim().toLowerCase();
+}

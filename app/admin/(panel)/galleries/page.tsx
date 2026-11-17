@@ -2,8 +2,9 @@ import Link from "next/link";
 import { A } from "@/components/admin/copy";
 import { Card, Empty, FilterBar, PageHead, Shell, provinceLabel } from "@/components/admin/Shell";
 import { requireStaff } from "@/lib/admin/auth";
-import { UNKNOWN, filtersQuery, parseFilters } from "@/lib/reports/filters";
-import { byGallery, filterOptions } from "@/lib/reports/queries";
+import { UNKNOWN, filtersQuery } from "@/lib/reports/filters";
+import { foldSearch } from "@/lib/reports/rank";
+import { byGallery, loadFilters } from "@/lib/reports/queries";
 import { faDigits, faNum, rankWithTies } from "@/lib/reports/rank";
 
 export const dynamic = "force-dynamic";
@@ -15,13 +16,13 @@ export default async function Galleries({ searchParams }: Props) {
   const user = await requireStaff();
   const params = await searchParams;
   const now = new Date();
-  const f = parseFilters(params, now);
-  const q = typeof params.q === "string" ? params.q.trim() : "";
+  const { f, options } = await loadFilters(params, now);
+  const q = typeof params.q === "string" ? params.q.trim().slice(0, 60) : "";
   const status = params.status === "ACTIVE" || params.status === "INACTIVE" ? params.status : "";
-  const [all, options] = await Promise.all([byGallery(f, now), filterOptions(f)]);
-  const needle = q.toLowerCase();
+  const all = await byGallery(f, now);
+  const needle = foldSearch(q);
   const rows = rankWithTies(
-    all.filter((g) => (!needle || g.name.toLowerCase().includes(needle) || g.publicId.toLowerCase().includes(needle)) && (!status || (g.id !== UNKNOWN && g.status === status))),
+    all.filter((g) => (!needle || foldSearch(g.name).includes(needle) || foldSearch(g.publicId).includes(needle)) && (!status || (g.id !== UNKNOWN && g.status === status))),
     (g) => g.successes,
   );
   const extra: Record<string, string> = { ...(q ? { q } : {}), ...(status ? { status } : {}) };
@@ -71,7 +72,14 @@ export default async function Galleries({ searchParams }: Props) {
                         </span>
                       ) : "—"}
                     </td>
-                    <td>{g.id !== UNKNOWN && <Link href={`/admin/galleries/${g.id}?${filtersQuery(f)}`} className="a-btn a-btn-line">{A.details}</Link>}</td>
+                    <td>
+                      {g.id !== UNKNOWN && (
+                        <span className="flex gap-2">
+                          <Link href={`/admin/galleries/${g.id}?${filtersQuery(f)}`} className="a-btn a-btn-line">{A.details}</Link>
+                          {g.status === "ACTIVE" && <a href={`/admin/galleries/${g.id}/qr?format=png`} className="a-btn a-btn-line">{A.getQr}</a>}
+                        </span>
+                      )}
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -85,5 +93,5 @@ export default async function Galleries({ searchParams }: Props) {
 }
 
 function ExcelNote() {
-  return <p className="text-sm text-[var(--a-ink-3)]">* {A.tied("چند")} · {A.notSales}</p>;
+  return <p className="text-sm text-[var(--a-ink-3)]">* {A.tiedNote} · {A.notSales}</p>;
 }

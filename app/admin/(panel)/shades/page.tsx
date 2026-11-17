@@ -1,8 +1,7 @@
 import { A } from "@/components/admin/copy";
 import { Card, Empty, ExcelLink, FilterBar, PageHead, Shell } from "@/components/admin/Shell";
 import { requireStaff } from "@/lib/admin/auth";
-import { parseFilters } from "@/lib/reports/filters";
-import { byShade, filterOptions, summary } from "@/lib/reports/queries";
+import { byShade, loadFilters, summary } from "@/lib/reports/queries";
 import { faNum, faPercent, rankWithTies, share } from "@/lib/reports/rank";
 
 export const dynamic = "force-dynamic";
@@ -14,8 +13,8 @@ type Props = { searchParams: Promise<Record<string, string | string[] | undefine
 export default async function Shades({ searchParams }: Props) {
   const user = await requireStaff();
   const now = new Date();
-  const f = parseFilters(await searchParams, now);
-  const [shades, s, options] = await Promise.all([byShade(f, now), summary(f, now), filterOptions(f)]);
+  const { f, options } = await loadFilters(await searchParams, now);
+  const [shades, s] = await Promise.all([byShade(f, now), summary(f, now)]);
   const rows = rankWithTies(shades, (x) => x.successes);
 
   return (

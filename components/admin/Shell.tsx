@@ -47,7 +47,7 @@ export function Shell({ user, current, children }: { user: StaffUser; current: S
               key={i.key}
               href={i.href}
               aria-current={i.key === current ? "page" : undefined}
-              className={`flex min-h-11 items-center gap-3 whitespace-nowrap rounded-lg px-3 text-[15px] font-medium ${i.key === current ? "bg-[var(--gold-fill)] text-white" : "text-white/90 hover:bg-white/10"}`}
+              className={`flex min-h-11 items-center gap-3 whitespace-nowrap rounded-lg px-3 text-[15px] font-medium ${i.key === current ? "bg-[var(--gold)] text-white" : "text-white/90 hover:bg-white/10"}`}
             >
               <Icon name={i.icon} />
               {A.nav[i.key]}

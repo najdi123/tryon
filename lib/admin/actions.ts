@@ -7,23 +7,30 @@ import { refresh } from "next/cache";
 import { db } from "@/lib/db";
 import { newQrToken } from "@/lib/analytics/session";
 import {
-  endStaffSession, hashPassword, logChange, loginBlocked, noteLoginFailure, requireAdmin, startStaffSession, verifyPassword,
+  clearLoginFailures, clientAddress, endOtherSessions, endStaffSession, hashPassword, isUsername, logChange, loginBlocked,
+  noteLoginFailure, requireAdmin, startStaffSession, verifyPassword,
 } from "./auth";
+import { PROVINCES } from "./provinces";
 
 export type FormState = { error?: string; ok?: boolean };
+const isUniqueClash = (e: unknown) => typeof e === "object" && e !== null && (e as { code?: string }).code === "P2002";
 const text = (fd: FormData, k: string) => String(fd.get(k) ?? "").trim();
+const NO_COLOUR_PLACEHOLDER = "#888888";
 
 export async function login(_prev: FormState, fd: FormData): Promise<FormState> {
   const username = text(fd, "username").toLowerCase();
-  const password = String(fd.get("password") ?? "");
-  if (loginBlocked(username)) return { error: "blocked" };
+  const password = String(fd.get("password") ?? "").slice(0, 200);
+  if (!isUsername(username)) return { error: "wrong" }; // nothing is remembered for a malformed name
+  const address = await clientAddress();
+  if (loginBlocked(username, address)) return { error: "blocked" };
   const user = await db.adminUser.findUnique({ where: { username } });
   // The password is checked even for an unknown username, so the answer takes the same time.
   const ok = await verifyPassword(password, user?.passwordHash ?? "scrypt$AAAAAAAAAAAAAAAAAAAAAA==$AAAA");
   if (!user || !user.active || !ok) {
-    noteLoginFailure(username);
+    noteLoginFailure(username, address);
     return { error: "wrong" };
   }
+  clearLoginFailures(username, address);
   await startStaffSession(user.id);
   redirect("/admin");
 }
@@ -46,18 +53,37 @@ export async function saveGallery(_prev: FormState, fd: FormData): Promise<FormS
     status: text(fd, "status") === "INACTIVE" ? ("INACTIVE" as const) : ("ACTIVE" as const),
   };
   if (!data.publicId || !data.name || !data.province || !data.city) return { error: "required" };
+  if (data.name.length > 80 || data.city.length > 40) return { error: "tooLong" };
+  if (!(PROVINCES as readonly string[]).includes(data.province)) return { error: "province" };
   if (!/^[A-Z0-9-]{3,20}$/.test(data.publicId)) return { error: "publicIdShape" };
   const clash = await db.gallery.findUnique({ where: { publicId: data.publicId } });
   if (clash && clash.id !== id) return { error: "publicIdTaken" };
-  if (id) {
-    await db.gallery.update({ where: { id }, data });
-    await logChange(user, "update", "gallery", id, `ویرایش گالری ${data.name} (${data.publicId})، وضعیت ${data.status === "ACTIVE" ? "فعال" : "غیرفعال"}`);
-    refresh();
-    return { ok: true };
+  let createdId = "";
+  try {
+    if (id) {
+      const before = await db.gallery.findUnique({ where: { id } });
+      if (!before) return { error: "notFound" };
+      await db.gallery.update({ where: { id }, data });
+      const was = [
+        before.name !== data.name ? `نام «${before.name}»` : "",
+        before.publicId !== data.publicId ? `شناسه ${before.publicId}` : "",
+        before.province !== data.province || before.city !== data.city ? `محل ${before.province}، ${before.city}` : "",
+        before.status !== data.status ? `وضعیت ${before.status === "ACTIVE" ? "فعال" : "غیرفعال"}` : "",
+      ].filter(Boolean);
+      await logChange(user, "update", "gallery", id,
+        `ویرایش گالری ${data.name} (${data.publicId})، ${data.province}، ${data.city}، ${data.status === "ACTIVE" ? "فعال" : "غیرفعال"}${was.length ? `؛ قبلاً: ${was.join("، ")}` : ""}`);
+    } else {
+      const g = await db.gallery.create({ data: { ...data, tokens: { create: { token: newQrToken() } } } });
+      createdId = g.id;
+      await logChange(user, "create", "gallery", g.id, `ثبت گالری ${data.name} (${data.publicId}) در ${data.province}، ${data.city}`);
+    }
+  } catch (e) {
+    if (isUniqueClash(e)) return { error: "publicIdTaken" }; // two people saved the same id at once
+    throw e;
   }
-  const g = await db.gallery.create({ data: { ...data, tokens: { create: { token: newQrToken() } } } });
-  await logChange(user, "create", "gallery", g.id, `ثبت گالری ${data.name} (${data.publicId}) در ${data.province}، ${data.city}`);
-  redirect(`/admin/galleries/${g.id}`);
+  if (createdId) redirect(`/admin/galleries/${createdId}`);
+  refresh();
+  return { ok: true };
 }
 
 // The old QR stops working; the history stays with the gallery.
@@ -87,10 +113,17 @@ export async function createUser(_prev: FormState, fd: FormData): Promise<FormSt
   const password = String(fd.get("password") ?? "");
   const role = text(fd, "role") === "ADMIN" ? ("ADMIN" as const) : ("VIEWER" as const);
   if (!username || !displayName) return { error: "required" };
-  if (!/^[a-z0-9.-]{3,30}$/.test(username)) return { error: "usernameShape" };
+  if (displayName.length > 60) return { error: "tooLong" };
+  if (!isUsername(username)) return { error: "usernameShape" };
   if (password.length < 10) return { error: "passwordShort" };
   if (await db.adminUser.findUnique({ where: { username } })) return { error: "usernameTaken" };
-  const u = await db.adminUser.create({ data: { username, displayName, role, passwordHash: await hashPassword(password) } });
+  let u;
+  try {
+    u = await db.adminUser.create({ data: { username, displayName, role, passwordHash: await hashPassword(password) } });
+  } catch (e) {
+    if (isUniqueClash(e)) return { error: "usernameTaken" };
+    throw e;
+  }
   await logChange(user, "create", "user", u.id, `ثبت کاربر ${displayName} (${username}) با نقش ${role === "ADMIN" ? "مدیر" : "مشاهده‌گر"}`);
   refresh();
   return { ok: true };
@@ -100,13 +133,15 @@ export async function updateUser(_prev: FormState, fd: FormData): Promise<FormSt
   const user = await requireAdmin();
   const id = text(fd, "id");
   const target = await db.adminUser.findUnique({ where: { id } });
-  if (!target) return { error: "required" };
+  if (!target) return { error: "notFound" };
   const intent = text(fd, "intent");
   if (intent === "password") {
     const password = String(fd.get("password") ?? "");
     if (password.length < 10) return { error: "passwordShort" };
     await db.adminUser.update({ where: { id }, data: { passwordHash: await hashPassword(password) } });
-    await db.adminSession.deleteMany({ where: { adminUserId: id, ...(id === user.id ? { id: "none" } : {}) } }); // others are signed out
+    // Every other session of that user ends. Changing your own password keeps only the session you are in.
+    if (id === user.id) await endOtherSessions(id);
+    else await db.adminSession.deleteMany({ where: { adminUserId: id } });
     await logChange(user, "password", "user", id, `تغییر رمز کاربر ${target.username}`);
   } else if (intent === "toggle") {
     if (id === user.id) return { error: "self" };
@@ -120,6 +155,8 @@ export async function updateUser(_prev: FormState, fd: FormData): Promise<FormSt
     if (target.role === "ADMIN" && target.active && (await activeAdmins(id)) === 0) return { error: "lastAdmin" };
     await db.adminUser.update({ where: { id }, data: { role } });
     await logChange(user, "role", "user", id, `تغییر نقش کاربر ${target.username} به ${role === "ADMIN" ? "مدیر" : "مشاهده‌گر"}`);
+  } else {
+    return { error: "notFound" };
   }
   refresh();
   return { ok: true };
@@ -132,15 +169,18 @@ export async function saveShade(_prev: FormState, fd: FormData): Promise<FormSta
   const id = text(fd, "id");
   const nameFa = text(fd, "nameFa");
   const hex = text(fd, "hex").toLowerCase();
-  if (!nameFa) return { error: "required" };
+  if (!nameFa || nameFa.length > 60) return { error: "required" };
   if (!/^#[0-9a-f]{6}$/.test(hex)) return { error: "hex" };
   const before = await db.shade.findUnique({ where: { id }, include: { line: true } });
-  if (!before) return { error: "required" };
-  const data = { nameFa, hex, active: fd.get("active") === "on", nameChecked: fd.get("nameChecked") === "on" };
+  if (!before) return { error: "notFound" };
+  // A shade with no colour is hidden from customers. Its row shows a grey placeholder; saving the
+  // row must not turn that placeholder into the shade's colour.
+  const keepNoColour = before.hex === null && hex === NO_COLOUR_PLACEHOLDER;
+  const data = { nameFa, hex: keepNoColour ? null : hex, active: fd.get("active") === "on", nameChecked: fd.get("nameChecked") === "on" };
   await db.shade.update({ where: { id }, data });
   const changed = [
     before.nameFa !== nameFa ? `نام «${before.nameFa}» به «${nameFa}»` : "",
-    before.hex !== hex ? `رنگ ${before.hex ?? "-"} به ${hex}` : "",
+    before.hex !== data.hex ? `رنگ ${before.hex ?? "-"} به ${data.hex ?? "-"}` : "",
     before.active !== data.active ? (data.active ? "فعال شد" : "غیرفعال شد") : "",
     before.nameChecked !== data.nameChecked ? (data.nameChecked ? "بررسی‌شده" : "بررسی‌نشده") : "",
   ].filter(Boolean);
@@ -154,15 +194,17 @@ export async function setLineActive(fd: FormData): Promise<void> {
   const key = text(fd, "key");
   const line = await db.productLine.findUnique({ where: { key } });
   if (!line) return;
-  await db.productLine.update({ where: { key }, data: { active: !line.active } });
-  await logChange(user, line.active ? "deactivate" : "activate", "line", line.id, `${line.nameEn}: ${line.active ? "از دید مشتری پنهان شد" : "برای مشتری نمایش داده می‌شود"}`);
+  const want = text(fd, "active") === "1";
+  if (want === line.active) return;
+  await db.productLine.update({ where: { key }, data: { active: want } });
+  await logChange(user, want ? "activate" : "deactivate", "line", line.id, `${line.nameEn}: ${want ? "برای مشتری نمایش داده می‌شود" : "از دید مشتری پنهان شد"}`);
   refresh();
 }
 
 export async function saveRetention(_prev: FormState, fd: FormData): Promise<FormState> {
   const user = await requireAdmin();
   const days = Number(text(fd, "days"));
-  if (!Number.isInteger(days) || days < 30 || days > 3650) return { error: "required" };
+  if (!Number.isInteger(days) || days < 30 || days > 3650) return { error: "retention" };
   await db.setting.upsert({ where: { key: "retention.eventDays" }, update: { value: String(days) }, create: { key: "retention.eventDays", value: String(days) } });
   await logChange(user, "update", "setting", "retention.eventDays", `مدت نگهداری رخدادهای آماری: ${days} روز`);
   refresh();

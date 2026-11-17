@@ -18,14 +18,18 @@ type Props = { params: Promise<{ id: string }>; searchParams: Promise<Record<str
 export default async function GalleryDetail({ params, searchParams }: Props) {
   const user = await requireStaff();
   const { id } = await params;
-  const gallery = await db.gallery.findUnique({ where: { id }, include: { tokens: { where: { active: true }, take: 1 } } });
+  const gallery = await db.gallery.findUnique({
+    where: { id },
+    include: { tokens: { where: { active: true, revokedAt: null }, orderBy: { createdAt: "desc" }, take: 1 } },
+  });
   if (!gallery) notFound();
   const now = new Date();
   // This page is one gallery: its own id and its own sample flag replace those two filters.
   const f: Filters = { ...parseFilters(await searchParams, now), galleryId: id, province: null, sample: gallery.isSample };
   const [s, days, lines, options] = await Promise.all([summary(f, now), byDay(f, now), byLine(f, now), filterOptions(f)]);
   const token = gallery.tokens[0]?.token;
-  const link = token ? await qrLink(token) : null;
+  const usable = gallery.status === "ACTIVE";
+  const link = token && usable ? await qrLink(token) : null;
 
   // Every day of the range, the empty ones too, up to 62 bars; longer ranges show their last 62 days.
   const span = Math.round((Date.parse(f.to) - Date.parse(f.from)) / 86_400_000) + 1;
@@ -68,7 +72,7 @@ export default async function GalleryDetail({ params, searchParams }: Props) {
               </div>
             </div>
             <div className="mt-2 flex flex-wrap items-center justify-between gap-3 text-xs text-[var(--a-ink-2)]">
-              <span className="num">{faDayShort(series[0].day)} تا {faDayShort(series[series.length - 1].day)}</span>
+              <span className="num">{A.fromTo(faDayShort(series[0].day), faDayShort(series[series.length - 1].day))}</span>
               <span className="flex gap-4">
                 <span className="flex items-center gap-1.5"><span className="size-3 rounded-sm bg-[var(--gold-fill)]" />{A.m.qrEntries}</span>
                 <span className="flex items-center gap-1.5"><span className="size-3 rounded-sm bg-[var(--plum-2)]" />{A.m.successes}</span>
@@ -107,7 +111,7 @@ export default async function GalleryDetail({ params, searchParams }: Props) {
                   </div>
                 </div>
               </>
-            ) : <p className="text-sm text-[var(--a-ink-2)]">{A.qrNone}</p>}
+            ) : <p className="text-sm font-bold text-[var(--a-danger)]">{!usable ? A.qrInactive : token ? A.qrNoBase : A.qrNone}</p>}
             {user.role === "ADMIN" && (
               <form action={renewQr} className="w-full border-t border-[var(--a-line)] pt-3">
                 <input type="hidden" name="galleryId" value={id} />

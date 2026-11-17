@@ -43,6 +43,7 @@ export default async function Catalog({ searchParams }: Props) {
         <>
           <form action={setLineActive} className="mb-4 flex flex-wrap items-center gap-3 text-sm">
             <input type="hidden" name="key" value={line.key} />
+            <input type="hidden" name="active" value={line.active ? "0" : "1"} />
             <span>{A.lineActive}: <b>{line.active ? A.active : A.inactive}</b></span>
             <button type="submit" className="a-btn a-btn-line">{line.active ? A.deactivate : A.activate}</button>
             <span className="num text-[var(--a-ink-3)]">{A.unchecked}: {faNum(unchecked)}</span>
@@ -54,7 +55,7 @@ export default async function Catalog({ searchParams }: Props) {
                   <tbody>
                     {fam.rows.map((s) => (
                       <ShadeRow key={s.id} shade={{
-                        id: s.id, code: s.code, nameFa: s.nameFa, nameEn: s.nameEn, hex: s.hex ?? "#888888",
+                        id: s.id, code: s.code, nameFa: s.nameFa, nameEn: s.nameEn, hex: s.hex,
                         active: s.active, nameChecked: s.nameChecked, tryOn: s.tryOn,
                       }} />
                     ))}

@@ -1,6 +1,6 @@
 import { randomBytes, scrypt as scryptCb, timingSafeEqual } from "node:crypto";
 import { promisify } from "node:util";
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { db } from "@/lib/db";
 import { ADMIN_COOKIE } from "@/lib/analytics/rules";
@@ -73,16 +73,44 @@ export async function logChange(user: StaffUser, action: string, entity: string,
   await db.changeLog.create({ data: { adminUserId: user.id, action, entity, entityId, summary } });
 }
 
-// Five wrong passwords for one username in ten minutes lock that username for the rest of the
-// ten minutes. Kept in the server's memory: enough for a small staff panel behind one process.
+// Five wrong passwords for one username FROM ONE ADDRESS in ten minutes lock that pair for the
+// rest of the ten minutes. Keyed on both, so a stranger hammering a username cannot lock its real
+// owner out. Only well-formed usernames are ever stored, nothing is stored for a first look, and
+// the map is bounded. Kept in the server's memory: enough for a small panel behind one process;
+// nginx limits the login address as well.
+const WINDOW_MS = 10 * 60 * 1000;
+const MAX_KEYS = 5000;
 const failures = new Map<string, number[]>();
+const recentFor = (key: string) => (failures.get(key) ?? []).filter((t) => Date.now() - t < WINDOW_MS);
 
-export function loginBlocked(username: string): boolean {
-  const recent = (failures.get(username) ?? []).filter((t) => Date.now() - t < 10 * 60 * 1000);
-  failures.set(username, recent);
-  return recent.length >= 5;
+export const isUsername = (v: string) => /^[a-z0-9.-]{3,30}$/.test(v);
+
+export async function clientAddress(): Promise<string> {
+  const h = await headers();
+  return (h.get("x-forwarded-for")?.split(",")[0] ?? h.get("x-real-ip") ?? "local").trim().slice(0, 64);
 }
 
-export function noteLoginFailure(username: string): void {
-  failures.set(username, [...(failures.get(username) ?? []), Date.now()]);
+export function loginBlocked(username: string, address: string): boolean {
+  return recentFor(`${username}|${address}`).length >= 5;
+}
+
+export function noteLoginFailure(username: string, address: string): void {
+  const key = `${username}|${address}`;
+  if (failures.size >= MAX_KEYS && !failures.has(key)) {
+    for (const [k, v] of failures) if (v.every((t) => Date.now() - t >= WINDOW_MS)) failures.delete(k);
+    if (failures.size >= MAX_KEYS) failures.clear(); // under a flood, forgetting is safer than growing
+  }
+  failures.set(key, [...recentFor(key), Date.now()]);
+}
+
+export function clearLoginFailures(username: string, address: string): void {
+  failures.delete(`${username}|${address}`);
+}
+
+// Signs out every other session of this user: the one asking keeps theirs.
+export async function endOtherSessions(userId: string): Promise<void> {
+  const token = (await cookies()).get(ADMIN_COOKIE)?.value;
+  await db.adminSession.deleteMany({
+    where: { adminUserId: userId, ...(token ? { tokenHash: { not: hashAdminToken(token) } } : {}) },
+  });
 }

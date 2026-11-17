@@ -2,7 +2,7 @@
 // The password is written to a file only the owner can read; it is never printed.
 //   npx tsx scripts/create-admin.ts <username> "<display name>" [ADMIN|VIEWER] [output file]
 import { randomBytes, scrypt as scryptCb } from "node:crypto";
-import { writeFileSync } from "node:fs";
+import { chmodSync, writeFileSync } from "node:fs";
 import { promisify } from "node:util";
 import { config } from "dotenv";
 
@@ -17,7 +17,7 @@ async function main() {
     process.stderr.write('usage: create-admin.ts <username> "<display name>" [ADMIN|VIEWER] [output file]\n');
     process.exit(1);
   }
-  const role = roleArg === "VIEWER" ? "VIEWER" : "ADMIN";
+  const asked = roleArg === "VIEWER" || roleArg === "ADMIN" ? roleArg : null;
   const file = fileArg ?? `panel-password-${username}.txt`;
   const password = randomBytes(12).toString("base64url");
   const salt = randomBytes(16);
@@ -25,6 +25,7 @@ async function main() {
   const { makeClient } = await import("../lib/db");
   const db = makeClient();
   const existed = await db.adminUser.findUnique({ where: { username } });
+  const role = asked ?? existed?.role ?? "ADMIN"; // a reset keeps the user's role unless one is given
   await db.adminUser.upsert({
     where: { username },
     update: { passwordHash, displayName, role, active: true },
@@ -32,6 +33,7 @@ async function main() {
   });
   if (existed) await db.adminSession.deleteMany({ where: { adminUserId: existed.id } });
   writeFileSync(file, `${username}\n${password}\n`, { mode: 0o600 });
+  chmodSync(file, 0o600); // an existing file keeps its old permissions otherwise
   process.stdout.write(`${existed ? "password reset for" : "created"} ${username} (${role}); the password is in ${file}\n`);
   await db.$disconnect();
 }

@@ -2,6 +2,7 @@
 
 import { useActionState } from "react";
 import { createUser, login, saveGallery, saveRetention, saveShade, updateUser, type FormState } from "@/lib/admin/actions";
+import { PROVINCES } from "@/lib/admin/provinces";
 import { A } from "./copy";
 
 const START: FormState = {};
@@ -48,7 +49,10 @@ export function GalleryForm({ gallery }: { gallery?: GalleryValues }) {
       </div>
       <div>
         <label className="a-label" htmlFor="g-prov">{A.f.province}</label>
-        <input id="g-prov" name="province" defaultValue={gallery?.province} required maxLength={40} className="a-input" />
+        <select id="g-prov" name="province" defaultValue={gallery?.province ?? ""} required className="a-input">
+          <option value="" disabled>{A.selectProvince}</option>
+          {PROVINCES.map((p) => <option key={p} value={p}>{p}</option>)}
+        </select>
       </div>
       <div>
         <label className="a-label" htmlFor="g-city">{A.city}</label>
@@ -119,7 +123,7 @@ export function UserActions({ id, active, role }: { id: string; active: boolean;
   );
 }
 
-type ShadeValues = { id: string; code: string; nameFa: string; nameEn: string; hex: string; active: boolean; nameChecked: boolean; tryOn: boolean };
+type ShadeValues = { id: string; code: string; nameFa: string; nameEn: string; hex: string | null; active: boolean; nameChecked: boolean; tryOn: boolean };
 
 export function ShadeRow({ shade }: { shade: ShadeValues }) {
   const [state, action, pending] = useActionState(saveShade, START);
@@ -131,7 +135,7 @@ export function ShadeRow({ shade }: { shade: ShadeValues }) {
           <input type="hidden" name="id" value={shade.id} />
           <input name="nameFa" defaultValue={shade.nameFa} required maxLength={60} aria-label={A.shadeName} className="a-input max-w-64" />
           <span dir="ltr" className="min-w-40 text-xs text-[var(--a-ink-3)]">{shade.nameEn}</span>
-          <input name="hex" type="color" defaultValue={shade.hex} aria-label={A.swatch} className="h-11 w-14 rounded-lg border border-[var(--a-line)] bg-white" />
+          <input name="hex" type="color" defaultValue={shade.hex ?? "#888888"} aria-label={A.swatch} className="h-11 w-14 rounded-lg border border-[var(--a-line)] bg-white" />
           <label className="flex min-h-11 items-center gap-1.5 text-sm"><input type="checkbox" name="nameChecked" defaultChecked={shade.nameChecked} className="size-5" />{A.checked}</label>
           <label className="flex min-h-11 items-center gap-1.5 text-sm"><input type="checkbox" name="active" defaultChecked={shade.active} className="size-5" />{A.active}</label>
           {!shade.tryOn && <span className="rounded-full bg-[var(--gold-soft)] px-2.5 py-1 text-xs">{A.notTryOn}</span>}

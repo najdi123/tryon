@@ -12,6 +12,7 @@ touched. Nothing here was tested on a real phone: see "Not tested".
 | Delivery tests on fixed data | `scripts/acceptance.ts` | 109 of 109, three runs in a row |
 | Phone screens | `tests/screens/walk-accept.js`, Chrome at 393 × 852 and 320 × 568 | 25 of 25 |
 | Access through the screen | `tests/screens/walk-forge.js` | 4 of 4 |
+| The camera inside the page (21 November) | `tests/screens/walk-camera.js`, Chrome with its test camera | 9 of 9 |
 | Staff panel walk (Phase 3) | browser walk of every panel page | 29 of 29 |
 
 One fault was found by these tests and fixed: when several requests from one new browser arrived
@@ -25,7 +26,7 @@ three). Visits could be over-counted; QR entries could not. The fix is in
 |---|---|---|
 | QR to output | Opening a gallery's QR link starts one session for that gallery and counts one entry. Brand, photo, shade, try-on and save are all recorded in that session and credited to that gallery, with the shade stored under its own brand line. The visit appears in today's report. On the screen: QR link, brand, photo, shade, preview, save button ready. One real picture from the image service was made and shown. | pass |
 | Back between steps without losing the choice | The app's back button and the browser's back and forward: the photo, the chosen shade and the finished preview are all still there. | pass |
-| Camera permission and the gallery fallback | The app does not ask for camera permission itself: "Take a selfie" opens the phone's own camera, "Choose from gallery" opens the photo picker. Both are offered. A file that is not a photo and a photo that cannot be read are each explained in Farsi, the customer cannot continue without a usable photo, and choosing from the gallery afterwards works. | pass (desk only) |
+| Camera permission and the gallery fallback | Since 21 November "Take a selfie" opens the front camera inside the page (the browser asks for permission) with a shutter and a cancel button; "Choose from gallery" opens the photo picker. A refused permission and a browser that gives pages no camera are each explained in Farsi with the gallery still offered. Before that date the button opened the phone's own camera, which the first real-phone test showed some browsers replace with the gallery. A file that is not a photo and a photo that cannot be read are each explained in Farsi, the customer cannot continue without a usable photo, and choosing from the gallery afterwards works. | pass (desk only) |
 | No data | An empty catalogue and a catalogue that fails to load each show a Farsi message and a retry button; retry recovers. An empty report shows zeros and an empty-state line, not an error. | pass |
 | Processing error | Image service failure, daily limit reached and no internet each show their own Farsi message, leave the customer able to try again, and do not lose earlier previews. Statistics being unreachable does not stop the customer. | pass |
 | Phone layout | No sideways scrolling on any step at 393 px or 320 px wide. Every button and link is at least 44 px tall. No page errors. | pass |

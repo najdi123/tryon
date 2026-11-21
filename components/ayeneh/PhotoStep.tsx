@@ -4,6 +4,7 @@ import { useRef, useState } from "react";
 import { readPhoto, type ReadyPhoto } from "@/lib/client/photo";
 import { COPY, PHOTO_PROBLEM } from "./copy";
 import { IconArrowRight, IconCamera, IconFrame, IconImage } from "./icons";
+import { SelfieCamera, cameraSupported } from "./SelfieCamera";
 
 type Props = { photo: ReadyPhoto | null; onPhoto: (p: ReadyPhoto) => void; onContinue: () => void };
 
@@ -12,6 +13,14 @@ export function PhotoStep({ photo, onPhoto, onContinue }: Props) {
   const gallery = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState(false);
   const [problem, setProblem] = useState<string | null>(null);
+  const [camera, setCamera] = useState(false);
+
+  // The camera inside the page first; the phone's own camera only where the browser has none.
+  function openCamera() {
+    setProblem(null);
+    if (cameraSupported()) setCamera(true);
+    else selfie.current?.click();
+  }
 
   async function take(file: File | undefined) {
     if (!file) return;
@@ -35,7 +44,15 @@ export function PhotoStep({ photo, onPhoto, onContinue }: Props) {
         <p className="mt-1 text-[15px] text-ink-3">{COPY.photoSub}</p>
       </div>
 
-      <div className="grid aspect-[4/3] place-items-center overflow-hidden rounded-3xl border-2 border-dashed border-line-strong bg-surface">
+      {camera && (
+        <SelfieCamera
+          onShot={(file) => { setCamera(false); void take(file); }}
+          onCancel={() => setCamera(false)}
+          onFail={(why) => { setCamera(false); setProblem(why === "denied" ? COPY.cameraDenied : COPY.cameraUnavailable); }}
+        />
+      )}
+
+      <div hidden={camera} className="grid aspect-[4/3] place-items-center overflow-hidden rounded-3xl border-2 border-dashed border-line-strong bg-surface">
         {busy ? (
           <div className="flex flex-col items-center gap-3 text-ink-2"><span className="spinner" /><span className="text-sm">{COPY.photoChecking}</span></div>
         ) : photo ? (
@@ -53,8 +70,8 @@ export function PhotoStep({ photo, onPhoto, onContinue }: Props) {
 
       {problem && <p role="alert" className="rounded-xl bg-danger-tint px-3 py-2.5 text-sm leading-6 text-danger">{problem}</p>}
 
-      <div className="grid grid-cols-2 gap-3">
-        <button type="button" disabled={busy} onClick={() => selfie.current?.click()} className="btn btn-soft"><IconCamera />{COPY.takeSelfie}</button>
+      <div hidden={camera} className="grid grid-cols-2 gap-3">
+        <button type="button" disabled={busy} onClick={openCamera} className="btn btn-soft"><IconCamera />{COPY.takeSelfie}</button>
         <button type="button" disabled={busy} onClick={() => gallery.current?.click()} className="btn btn-outline"><IconImage />{COPY.fromGallery}</button>
       </div>
       <input ref={selfie} type="file" accept="image/*" capture="user" hidden onChange={(e) => { void take(e.target.files?.[0]); e.target.value = ""; }} />

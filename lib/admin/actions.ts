@@ -201,6 +201,16 @@ export async function setLineActive(fd: FormData): Promise<void> {
   refresh();
 }
 
+// A test switch: the image service also retouches the face lightly.
+export async function saveRetouch(_prev: FormState, fd: FormData): Promise<FormState> {
+  const user = await requireAdmin();
+  const value = text(fd, "value") === "on" ? "on" : "off";
+  await db.setting.upsert({ where: { key: "tryon.retouch" }, update: { value }, create: { key: "tryon.retouch", value } });
+  await logChange(user, "update", "setting", "tryon.retouch", `روتوش چهره (آزمایشی): ${value === "on" ? "روشن" : "خاموش"}`);
+  refresh();
+  return { ok: true };
+}
+
 export async function saveRetention(_prev: FormState, fd: FormData): Promise<FormState> {
   const user = await requireAdmin();
   const days = Number(text(fd, "days"));

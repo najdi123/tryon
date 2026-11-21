@@ -5,7 +5,7 @@ import type { HairEngine, RecolorRequest, RecolorResult } from "./types";
 const MODEL = process.env.GEMINI_IMAGE_MODEL ?? "gemini-3.1-flash-lite-image";
 const ENDPOINT = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent`;
 
-function prompt(shade: RecolorRequest["shade"]): string {
+function prompt(shade: RecolorRequest["shade"], retouch: boolean): string {
   const colour = shade.description ? `${shade.nameEn} (${shade.description})` : shade.nameEn;
   return [
     `Using the provided photograph, recolor the hair to ${colour}, approximately hex ${shade.hex}.`,
@@ -13,10 +13,14 @@ function prompt(shade: RecolorRequest["shade"]): string {
     "hairstyle, haircut, length, outline and silhouette, parting, texture, curl and wave pattern, volume, and the",
     "position of every individual strand exactly as they are in the original photograph.",
     "Leave the eyebrows completely untouched: keep their original colour exactly as it is in the photograph.",
-    "Keep the face, facial features, expression, skin tone, pose, clothing, background, and lighting identical.",
+    retouch
+      ? "Also give the face a light, natural beauty retouch, as a portrait retoucher would: even out the skin tone, soften blemishes, dark circles and shine, and keep real skin texture. Keep the facial features, the shape of the face, the expression, pose, clothing, background and lighting identical, so the person is clearly the same person."
+      : "Keep the face, facial features, expression, skin tone, pose, clothing, background, and lighting identical.",
     "Preserve the natural shading of the hair: keep the original highlights, shadows, shine and depth,",
     "recoloured into the new shade rather than flattened into one solid colour.",
-    "The result must look like an ordinary unedited photograph of this person with this hair colour.",
+    retouch
+      ? "The result must look like a natural photograph of this person with this hair colour."
+      : "The result must look like an ordinary unedited photograph of this person with this hair colour.",
   ].join(" ");
 }
 
@@ -34,7 +38,7 @@ export const geminiEngine: HairEngine = {
         method: "POST",
         headers: { "Content-Type": "application/json", "x-goog-api-key": apiKey },
         body: JSON.stringify({
-          contents: [{ role: "user", parts: [{ text: prompt(req.shade) }, { inlineData: { mimeType: req.image.mimeType, data: req.image.base64 } }] }],
+          contents: [{ role: "user", parts: [{ text: prompt(req.shade, req.retouch === true) }, { inlineData: { mimeType: req.image.mimeType, data: req.image.base64 } }] }],
           // temperature 0: the most faithful to the photo.
           generationConfig: { responseModalities: ["IMAGE"], temperature: 0 },
         }),

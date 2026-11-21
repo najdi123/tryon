@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { hairEngine } from "@/lib/engine";
+import { recordingOn } from "@/lib/records";
 
 export const dynamic = "force-dynamic";
 
@@ -22,6 +23,7 @@ export async function GET() {
       orderBy: { sort: "asc" },
       include: { brand: true, shades: { where: { active: true, tryOn: true, hex: { not: null } }, orderBy: { sort: "asc" } } },
     });
+    const retouch = (await db.setting.findUnique({ where: { key: "tryon.retouch" } }))?.value === "on";
     const out: CatalogLine[] = lines.map((l) => {
       const families = new Map<string, string>();
       for (const s of l.shades) families.set(s.familyKey, s.familyFa);
@@ -35,7 +37,7 @@ export async function GET() {
       };
     });
     // aiAvailable false: no image service is connected, and the app says so before asking for anything.
-    return NextResponse.json({ lines: out, aiAvailable: hairEngine().available() }, { headers: { "Cache-Control": "private, max-age=60" } });
+    return NextResponse.json({ lines: out, aiAvailable: hairEngine().available(), recording: recordingOn(), retouch }, { headers: { "Cache-Control": "private, max-age=60" } });
   } catch (e) {
     console.error(`[catalog] ${e instanceof Error ? e.message : String(e)}`);
     return NextResponse.json({ error: "unavailable" }, { status: 503 });

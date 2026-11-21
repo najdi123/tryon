@@ -5,9 +5,10 @@ import { UNKNOWN, faDay, faMoment, filtersQuery, type Filters } from "@/lib/repo
 import { faNum } from "@/lib/reports/rank";
 import { A } from "./copy";
 
-type IconName = "chart" | "store" | "palette" | "book" | "gear";
+type IconName = "chart" | "store" | "palette" | "book" | "gear" | "photo";
 const PATHS: Record<IconName, string> = {
   chart: "M4 20V10m6 10V4m6 16v-7m4 7H2",
+  photo: "M4 6h16v13H4V6Zm0 10 4.5-4.5 3.5 3.5 2.5-2.5L20 17M9 10h.01",
   store: "M3 9l1.5-5h15L21 9M4 9v11h16V9M3 9h18M9 20v-6h6v6",
   palette: "M12 3a9 9 0 1 0 0 18c1.5 0 2-1 2-2s-.5-1.5 0-2.5 2-.5 3.5-.5A3.5 3.5 0 0 0 21 12a9 9 0 0 0-9-9ZM7.5 12h.01M9.5 8h.01M14.5 8h.01",
   book: "M5 4h11a3 3 0 0 1 3 3v13H8a3 3 0 0 1-3-3V4Zm0 13a3 3 0 0 1 3-3h11",
@@ -22,7 +23,7 @@ function Icon({ name }: { name: IconName }) {
   );
 }
 
-export type Section = "overview" | "galleries" | "shades" | "catalog" | "settings";
+export type Section = "overview" | "galleries" | "shades" | "catalog" | "records" | "settings";
 
 // The frame of every panel page: the plum side bar with the sections the role may open.
 export function Shell({ user, current, children }: { user: StaffUser; current: Section; children: React.ReactNode }) {
@@ -31,6 +32,7 @@ export function Shell({ user, current, children }: { user: StaffUser; current: S
     { key: "galleries", href: "/admin/galleries", icon: "store" },
     { key: "shades", href: "/admin/shades", icon: "palette" },
     { key: "catalog", href: "/admin/catalog", icon: "book", adminOnly: true },
+    { key: "records", href: "/admin/records", icon: "photo", adminOnly: true },
     { key: "settings", href: "/admin/settings", icon: "gear", adminOnly: true },
   ];
   return (

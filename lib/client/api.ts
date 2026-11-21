@@ -52,12 +52,18 @@ export function newId(): string {
   return `${hex(8)}-${hex(4)}-${hex(4)}-${hex(4)}-${hex(12)}`;
 }
 
-export type Catalog = { lines: CatalogLine[]; aiAvailable: boolean };
+export type Catalog = { lines: CatalogLine[]; aiAvailable: boolean; recording?: boolean; retouch?: boolean };
+
+// Test switches the server reports with the catalogue (see lib/records.ts and the panel's settings).
+export const flags = { recording: false, retouch: false };
 
 export async function loadCatalog(): Promise<Catalog> {
   const r = await fetch("/api/catalog");
   if (!r.ok) throw new Error("catalog");
-  return (await r.json()) as Catalog;
+  const c = (await r.json()) as Catalog;
+  flags.recording = c.recording === true;
+  flags.retouch = c.retouch === true;
+  return c;
 }
 
 export type TryOnFailure =

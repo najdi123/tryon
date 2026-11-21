@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState } from "react";
-import { createUser, login, saveGallery, saveRetention, saveShade, updateUser, type FormState } from "@/lib/admin/actions";
+import { createUser, login, saveGallery, saveRetention, saveRetouch, saveShade, updateUser, type FormState } from "@/lib/admin/actions";
 import { PROVINCES } from "@/lib/admin/provinces";
 import { A } from "./copy";
 
@@ -144,6 +144,18 @@ export function ShadeRow({ shade }: { shade: ShadeValues }) {
         </form>
       </td>
     </tr>
+  );
+}
+
+export function RetouchForm({ on }: { on: boolean }) {
+  const [state, action, pending] = useActionState(saveRetouch, START);
+  return (
+    <form action={action} className="flex flex-wrap items-center gap-3">
+      <input type="hidden" name="value" value={on ? "off" : "on"} />
+      <span className="font-bold">{on ? A.retouchOn : A.retouchOff}</span>
+      <button type="submit" disabled={pending} className="a-btn a-btn-line">{on ? A.retouchTurnOff : A.retouchTurnOn}</button>
+      <Note state={state} />
+    </form>
   );
 }
 

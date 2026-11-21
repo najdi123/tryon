@@ -34,6 +34,9 @@ Copy `.env.local.example` to `.env.local` and fill it in. The file is never comm
 | `GEMINI_IMAGE_MODEL` | no | Default `gemini-3.1-flash-lite-image`. |
 | `AI_TRYONS_PER_VISITOR_PER_DAY` | no | Default 30. Pictures one browser may ask the image service for in 24 hours. |
 | `AI_TRYONS_SITE_PER_DAY` | no | Default 2000. The same for the whole site: this is the real ceiling on cost. |
+| `RECORD_TRYONS` | no | Development only. `1` keeps the before and after pictures of every try-on on the server's disk for review in the panel (Test pictures). While it is on, the app's sentence "the photo is not stored" is not true: turn it off, or change that text and ask consent, before real customers use the app. |
+| `RECORD_DIR` | no | Where those pictures go. Default: `../ayeneh-records` beside the app. |
+| `RECORD_MAX_MB` | no | Default 1000. Recording stops when the folder reaches this size. |
 
 ## First install
 

@@ -1,8 +1,9 @@
-import { NewUserForm, RetentionForm, UserActions } from "@/components/admin/Forms";
+import { NewUserForm, RetentionForm, RetouchForm, UserActions } from "@/components/admin/Forms";
 import { A } from "@/components/admin/copy";
 import { Card, PageHead, Shell } from "@/components/admin/Shell";
 import { requireAdmin } from "@/lib/admin/auth";
 import { db } from "@/lib/db";
+import { recordingOn } from "@/lib/records";
 import { faMoment } from "@/lib/reports/filters";
 
 export const dynamic = "force-dynamic";
@@ -10,10 +11,11 @@ export const metadata = { title: "تنظیمات | پنل آینه‌رنگ", ro
 
 export default async function Settings() {
   const user = await requireAdmin();
-  const [users, log, retention] = await Promise.all([
+  const [users, log, retention, retouch] = await Promise.all([
     db.adminUser.findMany({ orderBy: { createdAt: "asc" } }),
     db.changeLog.findMany({ orderBy: { createdAt: "desc" }, take: 60, include: { adminUser: { select: { displayName: true } } } }),
     db.setting.findUnique({ where: { key: "retention.eventDays" } }),
+    db.setting.findUnique({ where: { key: "tryon.retouch" } }),
   ]);
 
   return (
@@ -50,6 +52,14 @@ export default async function Settings() {
         <div className="border-t border-[var(--a-line)] px-4 py-4">
           <RetentionForm days={Number(retention?.value ?? 365)} />
           <p className="mt-2 text-xs text-[var(--a-ink-3)]">{A.retentionHelp}</p>
+        </div>
+      </Card>
+
+      <Card title={A.testsTitle}>
+        <div className="flex flex-col gap-2 px-4 pb-4">
+          <RetouchForm on={retouch?.value === "on"} />
+          <p className="text-xs text-[var(--a-ink-3)]">{A.retouchHelp}</p>
+          <p className="mt-2 text-sm text-[var(--a-ink-2)]">{recordingOn() ? A.recordingOn : A.recordingOff}</p>
         </div>
       </Card>
 

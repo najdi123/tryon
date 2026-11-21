@@ -50,6 +50,7 @@ export async function POST(req: NextRequest) {
   let session: SessionRef;
   let target: { lineId: string; shadeId: string };
   let shade: { nameEn: string; hex: string; description: string | null };
+  let retouch = false;
   const cookies = NextResponse.json({});
   const withCookies = (res: NextResponse) => {
     for (const c of cookies.cookies.getAll()) res.cookies.set(c);
@@ -62,6 +63,7 @@ export async function POST(req: NextRequest) {
     if (!row || !row.hex) return fail("unknown_shade", 400);
     target = { lineId: row.lineId, shadeId: row.id };
     shade = { nameEn: row.nameEn, hex: compensate ? compensatedHex(row.hex, compensate) : row.hex, description: row.colorDescription };
+    retouch = (await db.setting.findUnique({ where: { key: "tryon.retouch" } }))?.value === "on";
     session = await sessionForRequest(req, cookies, { kind: "direct" });
     const start = await startAiTryOn(db, {
       session, target, eventId: `${attemptId}_s`, perVisitor: PER_VISITOR_PER_DAY, siteWide: SITE_WIDE_PER_DAY, now: new Date(),
@@ -81,7 +83,7 @@ export async function POST(req: NextRequest) {
   };
   const base64 = Buffer.from(await image.arrayBuffer()).toString("base64");
   const signal = AbortSignal.any([req.signal, AbortSignal.timeout(ENGINE_LIMIT_MS)]);
-  const result = await engine.recolor({ image: { mimeType: image.type, base64 }, shade, signal });
+  const result = await engine.recolor({ image: { mimeType: image.type, base64 }, shade, retouch, signal });
   if (req.signal.aborted) {
     await finish("TRYON_FAILED", "client_gone"); // nobody received it: not a success
     return withCookies(fail("failed", 499));

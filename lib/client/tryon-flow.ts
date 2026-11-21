@@ -4,6 +4,7 @@
 import { sendVerdict, tryOnAi, type TryOnFailure } from "./api";
 import { applyNudge, hairBody, previewPixels } from "./nudge";
 import type { ReadyPhoto } from "./photo";
+import { recordTryOn, type RecordOutcome } from "./record";
 import { judge } from "@/lib/colour/judge";
 import type { Lab } from "@/lib/colour/lab";
 
@@ -13,12 +14,14 @@ export async function aiPreview(photo: ReadyPhoto, lineKey: string, shade: { cod
   const prep = photo.prepared;
   const before = prep ? hairBody(prep.basePixels, prep.mask) : null;
   let compensate: Lab | undefined;
+  const rec = (outcome: RecordOutcome, image: string) => recordTryOn(photo, lineKey, shade.code, "ai", outcome, image);
   for (const attempt of [1, 2] as const) {
     const r = await tryOnAi(photo.blob, lineKey, shade.code, compensate);
     if (!r.ok) return r;
     // Without the on-device mask the colour cannot be measured: the picture is shown unchecked.
     if (!prep || !before) {
       sendVerdict(r.attemptId, "unchecked");
+      rec("unchecked", r.image);
       return { ok: true, image: r.image };
     }
     try {
@@ -26,23 +29,29 @@ export async function aiPreview(photo: ReadyPhoto, lineKey: string, shade: { cod
       const measured = hairBody(pixels.data, prep.mask);
       if (!measured) {
         sendVerdict(r.attemptId, "unchecked");
+        rec("unchecked", r.image);
         return { ok: true, image: r.image };
       }
       const v = judge(measured, shade.hex, before);
       if (v.kind === "accept") {
         sendVerdict(r.attemptId, "accepted");
+        rec("accepted", r.image);
         return { ok: true, image: r.image };
       }
       if (v.kind === "nudge") {
         const image = applyNudge(pixels, prep, v);
         sendVerdict(r.attemptId, "nudged");
+        rec("raw", r.image);
+        rec("nudged", image);
         return { ok: true, image };
       }
       sendVerdict(r.attemptId, attempt === 1 ? "retry" : "rejected"); // not a success either way
+      rec(attempt === 1 ? "retry" : "rejected", r.image);
       if (attempt === 2) return { ok: false, reason: "colour_off" };
       compensate = v.compensate;
     } catch {
       sendVerdict(r.attemptId, "unchecked"); // measuring failed: the picture itself is fine to show
+      rec("unchecked", r.image);
       return { ok: true, image: r.image };
     }
   }

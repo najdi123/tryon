@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { track, type CatalogLine, type CatalogShade } from "@/lib/client/api";
+import { flags, track, type CatalogLine, type CatalogShade } from "@/lib/client/api";
+import { recordTryOn } from "@/lib/client/record";
 import { aiPreview } from "@/lib/client/tryon-flow";
 import { composeResult } from "@/lib/client/compose";
 import type { ReadyPhoto } from "@/lib/client/photo";
@@ -35,7 +36,7 @@ type Props = {
 
 // Whether this shade on this photo can be made on the phone or needs the image service.
 function engineFor(photo: ReadyPhoto, shade: CatalogShade): "local" | "ai" {
-  if (!photo.prepared) return "ai";
+  if (!photo.prepared || flags.retouch) return "ai"; // the face retouch test is the image service's work
   return needsGemini(photo.prepared.avgHairLightness, shade.hex) ? "ai" : "local";
 }
 
@@ -82,6 +83,7 @@ export function TryStep(p: Props) {
         if (!url.startsWith("data:image/")) throw new Error("empty");
         p.onResult(k, url);
         track("TRYON_SUCCEEDED", { ...ref, status: "local" });
+        recordTryOn(photo, line.key, shade.code, "local", "shown", url);
       } catch {
         track("TRYON_FAILED", { ...ref, status: "local" });
         setProblem({ text: TRYON_PROBLEM.failed, kind: "error" });

@@ -8,7 +8,7 @@ The brief is two Word documents by Ali Shafiei (16 November 2026) with four refe
 This file is the working plan: what was decided, what is built, what is left. It is updated when a
 phase moves or a decision is made.
 
-Last updated: 17 November 2026 (Phase 4 tests).
+Last updated: 21 November 2026 (development switches).
 
 ## Where things stand
 
@@ -24,6 +24,22 @@ Last updated: 17 November 2026 (Phase 4 tests).
 The live site (zibarokh.rukhat.com) serves the new app since 17 November 2026 (the old app was commit `b6bbd6a`; the old nginx file is kept on the server as `/root/zibarokh-rukhat.nginx.before-ayeneh`). One admin login exists; the stage logins are removed. Still to do: the real-phone test.
 A stopped test copy of the new code is on the server at `/root/qr-tryon-stage`, port 3018.
 The delivery tests use their own database, `ayeneh_test`, and the same copy started on port 3019.
+
+## Development switches (21 November 2026)
+
+Both are for the development period and are on the test site only.
+
+- **Recording.** `RECORD_TRYONS=1` keeps the before and after pictures of every try-on
+  (phone-made and image-service, refused ones too) in `/root/ayeneh-records`, capped at 1 GB.
+  Admins see them in the panel under Test pictures. Ali's decision, to review weak previews
+  (men with very little hair come out badly). While it is on, the customer text "the photo is
+  not stored" is not true, and phone-made previews, which otherwise never leave the phone, are
+  uploaded. It must be turned off, or the text changed and consent asked, before real customers.
+- **Face retouch.** A switch in Settings (`tryon.retouch`). While on, every preview goes through
+  the image service, which also retouches the face lightly. The client asked to see this.
+- The selfie camera is inside the page since 21 November (the phone's own camera button was
+  ignored by some browsers). A website cannot lock the phone's rotation: the page keeps its
+  480 px column when turned, and the manifest asks for portrait when installed.
 
 ## Decisions
 
